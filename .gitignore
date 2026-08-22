@@ -15,7 +15,10 @@ bin/
 # 运行时产物（runClient 生成）
 runs/
 run/
+
+# 日志
 logs/
+*.log
 crash-reports/
 options.txt
 screenshots/
