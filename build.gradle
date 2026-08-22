@@ -11,15 +11,15 @@ java {
     toolchain { languageVersion = JavaLanguageVersion.of(21) }
 }
 
-// 附属模组所需的第三方仓库（与 Create 官方 build.gradle 保持一致）
+// Third-party repositories required by the addon (mirrors Create's official build.gradle)
 repositories {
-    // Create 本体 / Flywheel / Ponder
+    // Create itself / Flywheel / Ponder
     maven { url = 'https://maven.createmod.net' }
-    // Registrate 快照仓库
+    // Registrate snapshot repository
     maven { url = 'https://maven.ithundxr.dev/snapshots' }
-    // Ponder 的传递依赖：NeoForge Config API Port
+    // Ponder transitive dependency: NeoForge Config API Port
     maven { url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven' }
-    // Modrinth Maven：兼容性测试用的附属（Create: Extra Gauges）
+    // Modrinth Maven: addons used for compatibility testing (Create: Extra Gauges)
     maven {
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
@@ -30,7 +30,7 @@ repositories {
 neoForge {
     version = project.neo_version
 
-    // 与 Create 官方一致的 Parchment 官方映射
+    // Matches Create's official Parchment mappings
     parchment {
         minecraftVersion = project.minecraft_version
         mappingsVersion = project.parchment_version
@@ -49,11 +49,11 @@ neoForge {
 }
 
 dependencies {
-    // Create 6.0.11（fat jar）：其 POM 会传递解析 Registrate / Ponder / Flywheel
+    // Create 6.0.11 (fat jar): its POM transitively resolves Registrate / Ponder / Flywheel
     implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
-    // 仅运行时引入，用于与 Create: Extra Gauges 的兼容性验证（不参与编译）
+    // Runtime-only: compatibility verification against Create: Extra Gauges (not compiled against)
     runtimeOnly "maven.modrinth:extra-gauges:2.1.2"
-    // Extra Gauges 的前置库：Create: Deployer API
+    // Extra Gauges dependency: Create: Deployer API
     runtimeOnly "maven.modrinth:deployer:0.1.2"
 }
 

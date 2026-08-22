@@ -1,5 +1,5 @@
 modLoader = "javafml"
-# NeoForge 的 javafml 版本号独立于 MC 版本（1.21.1 对应 FML 4.x），勿照抄 Forge 的 [21,)
+# NeoForge's javafml version is independent of the MC version (1.21.1 = FML 4.x); do not copy Forge's [21,)
 loaderVersion = "[4,)"
 license = "MIT"
 
@@ -10,8 +10,8 @@ displayName = "Create: Colored Connections"
 logoFile = "icon.png"
 authors = "Rlosking-C"
 description = '''
-为机械动力的工厂仪表连接线提供 16 色染色，交叉连接一目了然。
-Colorize Factory Gauge recipe links with the 16 vanilla dyes.
+Colorize Factory Gauge recipe links with the 16 vanilla dyes, so heavily
+crossed networks stay readable at a glance.
 '''
 
 [[dependencies.create_colored_connections]]

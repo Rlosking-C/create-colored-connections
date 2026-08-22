@@ -6,7 +6,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
 /**
- * Create: Colored Connections (机械动力：彩色连接线)
+ * Create: Colored Connections
  *
  * <p>Adds 16-color dyeing to the recipe-mode connection lines of Create 6.0
  * Factory Gauges, so that heavily crossed links stay distinguishable.</p>
