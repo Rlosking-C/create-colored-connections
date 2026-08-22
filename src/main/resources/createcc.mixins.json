@@ -3,6 +3,9 @@
   "minVersion": "0.8.5",
   "package": "com.colconn.createcc.mixin",
   "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "FactoryPanelBehaviourMixin"
+  ],
   "client": [
     "client.FactoryPanelRendererMixin"
   ],

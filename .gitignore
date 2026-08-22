@@ -1,4 +1,30 @@
-﻿build/
+# Gradle
 .gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+bin/
+
+# 运行时产物（runClient 生成）
+runs/
 run/
-*.log
+logs/
+crash-reports/
+options.txt
+screenshots/
+saves/
+.dat*
+usernamecache.json
+usercache.json
+known_commits.txt
+
+# 系统
+Thumbs.db
+.DS_Store

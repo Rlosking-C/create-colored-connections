@@ -1,33 +1,62 @@
 package com.colconn.createcc;
 
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 
 /**
- * 机械动力：彩色连接线（Create: Colored Connections）
+ * Create: Colored Connections (机械动力：彩色连接线)
  *
- * <p>为 Create 6.0 工厂仪表（Factory Gauge）配方模式下的连接线提供 16 色染色功能，
- * 解决大量连接线交叉重叠时难以分辨的问题。</p>
+ * <p>Adds 16-color dyeing to the recipe-mode connection lines of Create 6.0
+ * Factory Gauges, so that heavily crossed links stay distinguishable.</p>
  *
- * <p>核心设计：
+ * <p>Core design:
  * <ul>
- *   <li>染料右键染色，黑色染料 = 恢复原版状态色</li>
- *   <li>新建连接时，若来源仪表的入线颜色唯一则继承该颜色（仅创建时继承，不动态级联）</li>
- *   <li>多色同格共显：2 色并排双条 / 3-4 色车道均分 / 5+ 色轮播 + 悬停置顶</li>
- *   <li>染色以纹理 tint 实现（保留连接线搓衣板斜纹），与 Create 视觉风格一致</li>
+ *   <li>Right-click a link while holding a dye to color it; black dye restores
+ *       the vanilla status color</li>
+ *   <li>When a new link is created, it inherits the source gauge's incoming
+ *       color — only if all incoming links share one single color
+ *       (inheritance happens at creation time only, no dynamic cascading)</li>
+ *   <li>Idle lines (vanilla gray) are fully replaced by the dye color;
+ *       status lines (active / satisfied / failed / flashing) keep the vanilla
+ *       status-colored core and surround it with a 1px dye border
+ *       (no color mixing, status stays readable)</li>
+ *   <li>Looking at any link smoothly lifts the whole line above all others
+ *       (about 0.01 blocks — only changes occlusion order at crossings,
+ *       no visible displacement), which helps tell overlapping links apart</li>
+ *   <li>Redstone / display link lines carry status semantics in their color
+ *       and are never dyed</li>
+ * </ul></p>
+ *
+ * <p>Code map:
+ * <ul>
+ *   <li>{@code client.DyeInteractionHandler} — dye right-click interaction entry (event subscriber)</li>
+ *   <li>{@code ConnectionHitTester} — crosshair-to-polyline hit testing (shared by dyeing and hover lift)</li>
+ *   <li>{@code ConnectionKey} / {@code ConnectionColorManager} — connection identity key and color data hub</li>
+ *   <li>{@code network.*} — coloring request (C→S) and sync (S→C) packets</li>
+ *   <li>{@code mixin.*} — three Mixin injections: rendering, data lifecycle, interaction canceling</li>
  * </ul></p>
  */
 @Mod(ColoredConnections.MODID)
 public class ColoredConnections {
 
-    /** 模组 ID，与 neoforge.mods.toml 中保持一致 */
-    public static final String MODID = "create_colored_connections";
+	/** Mod id; must match neoforge.mods.toml */
+	public static final String MODID = "create_colored_connections";
 
-    /**
-     * 模组入口（NeoForge 1.21.1 通过构造器注入事件总线）
-     */
-    public ColoredConnections(IEventBus modBus, ModContainer container) {
-        // 骨架阶段：仅验证依赖解析与 Mixin 编译，无注册内容
-    }
+	/**
+	 * Mod entry point (NeoForge 1.21.1 injects the mod event bus via constructor).
+	 */
+	public ColoredConnections(IEventBus modBus, ModContainer container) {
+		// Payload registration is a mod-bus event: attach explicitly to avoid
+		// the bus ambiguity of @EventBusSubscriber
+		modBus.addListener(com.colconn.createcc.network.ColoredConnectionNetwork::register);
+	}
+
+	/**
+	 * Single helper for building resource locations in this mod's namespace.
+	 */
+	public static ResourceLocation rl(String path) {
+		return ResourceLocation.fromNamespaceAndPath(MODID, path);
+	}
 }

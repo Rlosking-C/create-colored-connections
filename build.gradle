@@ -19,6 +19,12 @@ repositories {
     maven { url = 'https://maven.ithundxr.dev/snapshots' }
     // Ponder 的传递依赖：NeoForge Config API Port
     maven { url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven' }
+    // Modrinth Maven：兼容性测试用的附属（Create: Extra Gauges）
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
 }
 
 neoForge {
@@ -45,6 +51,10 @@ neoForge {
 dependencies {
     // Create 6.0.11（fat jar）：其 POM 会传递解析 Registrate / Ponder / Flywheel
     implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
+    // 仅运行时引入，用于与 Create: Extra Gauges 的兼容性验证（不参与编译）
+    runtimeOnly "maven.modrinth:extra-gauges:2.1.2"
+    // Extra Gauges 的前置库：Create: Deployer API
+    runtimeOnly "maven.modrinth:deployer:0.1.2"
 }
 
 tasks.withType(JavaCompile).configureEach {
