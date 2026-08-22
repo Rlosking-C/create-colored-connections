@@ -1,0 +1,52 @@
+plugins {
+    id 'net.neoforged.moddev' version '2.0.144'
+}
+
+version = mod_version
+group = 'com.colconn'
+
+base { archivesName = 'create-colored-connections' }
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+// 附属模组所需的第三方仓库（与 Create 官方 build.gradle 保持一致）
+repositories {
+    // Create 本体 / Flywheel / Ponder
+    maven { url = 'https://maven.createmod.net' }
+    // Registrate 快照仓库
+    maven { url = 'https://maven.ithundxr.dev/snapshots' }
+    // Ponder 的传递依赖：NeoForge Config API Port
+    maven { url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven' }
+}
+
+neoForge {
+    version = project.neo_version
+
+    // 与 Create 官方一致的 Parchment 官方映射
+    parchment {
+        minecraftVersion = project.minecraft_version
+        mappingsVersion = project.parchment_version
+    }
+
+    mods {
+        create_colored_connections { sourceSet(sourceSets.main) }
+    }
+
+    runs {
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+        }
+        client { client() }
+    }
+}
+
+dependencies {
+    // Create 6.0.11（fat jar）：其 POM 会传递解析 Registrate / Ponder / Flywheel
+    implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

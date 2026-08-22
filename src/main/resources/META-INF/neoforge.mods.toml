@@ -1,0 +1,37 @@
+modLoader = "javafml"
+loaderVersion = "[21,)"
+license = "MIT"
+
+[[mods]]
+modId = "create_colored_connections"
+version = "0.1.0"
+displayName = "Create: Colored Connections"
+authors = "colconn"
+description = '''
+为机械动力的工厂仪表连接线提供 16 色染色，交叉连接一目了然。
+Colorize Factory Gauge recipe links with the 16 vanilla dyes.
+'''
+
+[[dependencies.create_colored_connections]]
+    modId = "neoforge"
+    type = "required"
+    versionRange = "[21.1.0,)"
+    ordering = "NONE"
+    side = "BOTH"
+
+[[dependencies.create_colored_connections]]
+    modId = "minecraft"
+    type = "required"
+    versionRange = "[1.21.1,1.22)"
+    ordering = "NONE"
+    side = "BOTH"
+
+[[dependencies.create_colored_connections]]
+    modId = "create"
+    type = "required"
+    versionRange = "[6.0.0,)"
+    ordering = "AFTER"
+    side = "BOTH"
+
+[[mixins]]
+    config = "createcc.mixins.json"
