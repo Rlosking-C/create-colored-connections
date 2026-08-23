@@ -27,13 +27,13 @@ Client **and** server for multiplayer.
 - Colors sync to players on login, dimension change, and chunk load — nothing to configure.
 - No config file, no commands; vanilla dye mechanics only.
 
-## Building
+## Download
 
-```powershell
-./gradlew build
-```
+Find this mod on [Modrinth](https://modrinth.com/) or [CurseForge](https://www.curseforge.com/) *(links coming soon)*.
 
-The jar lands in `build/libs`.
+## Modpacks
+
+You may include this mod in any modpack, no permission needed.
 
 ## License
 

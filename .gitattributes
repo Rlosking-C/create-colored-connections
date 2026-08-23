@@ -1,0 +1,14 @@
+# Normalize line endings: text files checked out with LF, committed with LF
+* text=auto eol=lf
+
+# Windows scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Gradle wrapper script on Unix
+gradlew text eol=lf
+
+# Binaries
+*.png binary
+*.jar binary
+*.zip binary
