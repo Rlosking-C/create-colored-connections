@@ -2,6 +2,8 @@
 
 Colorize the recipe-mode connection lines of Create's Factory Gauges with the 16 vanilla dyes, so that heavily crossed networks stay readable at a glance.
 
+![A crossed gauge network with color-coded links](images/crossing-network.png)
+
 ## Features
 
 - **Right-click a link with any dye** to color it. Lines are drawn on the wall between gauges — point at the line itself, not the gauge panel.
@@ -11,6 +13,20 @@ Colorize the recipe-mode connection lines of Create's Factory Gauges with the 16
 - **Hover lift.** Looking at any link smoothly lifts the whole line above its neighbors (a few microns — only the occlusion order changes), so you can always tell which line is which where links cross or overlap.
 - **Sticky hover.** Once a line is hovered it stays picked while the crosshair is on it; small mouse movements over crossing or overlapping lines no longer make the highlight jump between them. The dye click targets exactly the line that is lifted on screen.
 - **Link lines are never dyed.** Redstone and display link lines carry status semantics in their color and are left fully vanilla.
+
+## Gallery
+
+All 16 dye colors, applied to gauge links:
+
+![Every dye color applied to a connection](images/all-16-colors.png)
+
+A dense network keeps every link traceable once color-coded:
+
+![A dense gauge network with color-coded links](images/dense-network.png)
+
+Inherited colors propagate through a production chain — one dye at the top spreads down every following link:
+
+![Color inheritance across a production chain](images/color-inheritance.png)
 
 ## Requirements
 
