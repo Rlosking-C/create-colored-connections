@@ -52,7 +52,7 @@ Client **and** server for multiplayer.
 
 ## Download
 
-Find this mod on [Modrinth](https://modrinth.com/) or [CurseForge](https://www.curseforge.com/) *(links coming soon)*.
+Find this mod on [Modrinth](https://modrinth.com/mod/create-colored-connections) .
 
 ## Modpacks
 
