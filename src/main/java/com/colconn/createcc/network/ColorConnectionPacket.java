@@ -21,7 +21,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  *
  * <p>The server triple-validates: player identity, distance (prevents
  * remote cheat-coloring), and that the matching dye is actually held;
- * in non-creative mode one dye is consumed. Persistence and broadcasting
+ * the dye is never consumed — coloring is a free visual tag, not a
+ * crafting cost. Persistence and broadcasting
  * are handled by {@link ConnectionColorManager#setColor}.</p>
  */
 public record ColorConnectionPacket(FactoryPanelPosition from, FactoryPanelPosition to, int dyeOrdinal) implements CustomPacketPayload {
@@ -60,27 +61,26 @@ public record ColorConnectionPacket(FactoryPanelPosition from, FactoryPanelPosit
 		if (player.position().distanceToSqr(payload.to().pos().getCenter()) > 64 * 64)
 			return;
 		// Validation: the matching dye must actually be held (black = clear-color
-		// semantics); consume one in non-creative mode
-		if (!consumeDye(player, payload.dyeOrdinal()))
+		// semantics); it is never consumed
+		if (!holdsDye(player, payload.dyeOrdinal()))
 			return;
 		DyeColor dye = payload.dyeOrdinal() < 0 ? null : DyeColor.byId(payload.dyeOrdinal());
 		ConnectionColorManager.setColor(serverLevel, payload.from(), payload.to(), dye);
 	}
 
 	/**
-	 * Finds a dye matching the request in either hand; black corresponds to
-	 * dyeOrdinal = -1 (clear the color).
+	 * Checks that a dye matching the request is held in either hand; black
+	 * corresponds to dyeOrdinal = -1 (clear the color). Creative players
+	 * skip the check, and no game mode ever consumes the dye.
 	 */
-	private static boolean consumeDye(ServerPlayer player, int dyeOrdinal) {
+	private static boolean holdsDye(ServerPlayer player, int dyeOrdinal) {
 		if (player.isCreative())
 			return true;
 		DyeColor expected = dyeOrdinal < 0 ? DyeColor.BLACK : DyeColor.byId(dyeOrdinal);
 		for (InteractionHand hand : InteractionHand.values()) {
 			ItemStack held = player.getItemInHand(hand);
-			if (held.getItem() instanceof DyeItem dyeItem && dyeItem.getDyeColor() == expected) {
-				held.shrink(1);
+			if (held.getItem() instanceof DyeItem dyeItem && dyeItem.getDyeColor() == expected)
 				return true;
-			}
 		}
 		return false;
 	}

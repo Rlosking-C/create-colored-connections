@@ -48,7 +48,7 @@ Client **and** server for multiplayer.
 
 - Colors are stored per dimension in the world save and survive panel relocation and world reload.
 - Colors sync to players on login, dimension change, and chunk load — nothing to configure.
-- No config file, no commands; vanilla dye mechanics only.
+- No config file, no commands; hold a dye and right-click — nothing is consumed.
 
 ## Download
 
