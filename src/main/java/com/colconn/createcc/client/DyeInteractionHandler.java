@@ -51,9 +51,19 @@ public class DyeInteractionHandler {
 		if (event.getHitVec() == null)
 			return;
 
+		// Sticky pick: on the client, seed the picker with the currently
+		// hovered connection so the dye lands on the line the player sees
+		// lifted (hysteresis inside find() keeps it stable among overlapping
+		// lines). The ternary short-circuits on the server, so this
+		// client-only class is never touched there.
+		boolean clientSide = event.getLevel().isClientSide();
+		ConnectionHoverTracker.Key hoveredKey =
+			clientSide ? ConnectionHoverTracker.hoveredConnection() : null;
 		ConnectionHitTester.Hit hit = ConnectionHitTester.find(event.getLevel(),
-			event.getHitVec().getLocation(), event.getHitVec().getDirection());
-		if (event.getLevel().isClientSide())
+			event.getHitVec().getLocation(), event.getHitVec().getDirection(),
+			hoveredKey == null ? null : hoveredKey.from(),
+			hoveredKey == null ? null : hoveredKey.to());
+		if (clientSide)
 			LOGGER.info("createcc coloring click {} -> {}", event.getHitVec().getLocation(),
 				hit == null ? "no connection hit" : hit.from().pos() + " -> " + hit.to().pos());
 		if (hit == null)

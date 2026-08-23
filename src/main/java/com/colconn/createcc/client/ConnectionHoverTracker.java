@@ -120,9 +120,26 @@ public final class ConnectionHoverTracker {
 			hovered = null;
 			return;
 		}
-		ConnectionHitTester.Hit hit =
-			ConnectionHitTester.find(level, blockHit.getLocation(), blockHit.getDirection());
+		// Pass the current target into the picker as the "sticky" connection:
+		// hysteresis keeps it picked while the crosshair stays on it, so close
+		// or crossing lines no longer flip the hover on every tiny mouse move
+		ConnectionHitTester.Hit hit = ConnectionHitTester.find(level,
+			blockHit.getLocation(), blockHit.getDirection(),
+			hovered == null ? null : hovered.from(),
+			hovered == null ? null : hovered.to());
 		hovered = hit == null ? null : new Key(hit.from(), hit.to());
+	}
+
+	/**
+	 * The connection currently under the crosshair (null when off every line).
+	 *
+	 * <p>Consumed by the dye click handler so the line that is visibly lifted
+	 * is exactly the line that gets dyed — clicking through a bundle of
+	 * overlapping lines must match what the player sees raised, not whichever
+	 * line is a hair closer to the raw hit point.</p>
+	 */
+	public static Key hoveredConnection() {
+		return hovered;
 	}
 
 	/**

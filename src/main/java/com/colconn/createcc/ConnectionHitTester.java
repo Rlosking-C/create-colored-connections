@@ -38,11 +38,20 @@ public class ConnectionHitTester {
 
 	/** Hit threshold (blocks): the visual line is roughly 3px wide, keep some tolerance */
 	private static final double HIT_THRESHOLD = 0.3;
+	/**
+	 * Hysteresis margin (blocks): while a connection is already hovered, a rival
+	 * line must beat it by this margin to steal the pick. Without it, lines that
+	 * cross or run close together flap between each other on every sub-pixel
+	 * crosshair move (both sit within HIT_THRESHOLD, "nearest" re-decides each
+	 * sample). The margin makes the pick sticky until the crosshair clearly
+	 * moves onto another line.
+	 */
+	private static final double SWITCH_MARGIN = 0.15;
 	/** In-plane search radius: matches Create's maximum link distance of 16 blocks */
 	private static final int SEARCH_RADIUS = 16;
 
-	/** Hit result: connection key (from = source panel, to = covered target panel) */
-	public record Hit(FactoryPanelPosition from, FactoryPanelPosition to) {}
+	/** Hit result: connection key (from = source panel, to = covered target panel) + distance to its polyline */
+	public record Hit(FactoryPanelPosition from, FactoryPanelPosition to, double dist) {}
 
 	/**
 	 * Searches for the nearest dyeable connection within the plane of the hit
@@ -54,6 +63,24 @@ public class ConnectionHitTester {
 	 * @return the hit connection; null when nothing is within the threshold
 	 */
 	public static Hit find(Level level, Vec3 hit, Direction face) {
+		return find(level, hit, face, null, null);
+	}
+
+	/**
+	 * Sticky variant of {@link #find(Level, Vec3, Direction)}.
+	 *
+	 * <p>When {@code stickyFrom}/{@code stickyTo} names a connection that is
+	 * currently hovered, hysteresis applies: that connection keeps the pick as
+	 * long as the crosshair is still on it (within {@link #HIT_THRESHOLD}),
+	 * unless a rival line is closer by {@link #SWITCH_MARGIN} (a deliberate
+	 * move onto the rival). This keeps the hover target stable where lines
+	 * cross or overlap — the exact places where "nearest" flickers.</p>
+	 *
+	 * <p>Pass {@code null/null} when there is no current target (plain
+	 * nearest-pick behavior, identical to the 3-arg overload).</p>
+	 */
+	public static Hit find(Level level, Vec3 hit, Direction face,
+			FactoryPanelPosition stickyFrom, FactoryPanelPosition stickyTo) {
 		BlockPos base = BlockPos.containing(hit);
 		// Hit-face normal axis → the two in-plane iteration directions
 		Direction first, second;
@@ -64,6 +91,10 @@ public class ConnectionHitTester {
 		}
 		Hit best = null;
 		double bestDist = HIT_THRESHOLD;
+		// Distance of the sticky (currently hovered) connection, tracked in the
+		// same single scan pass so hysteresis costs no extra work
+		Hit stickyHit = null;
+		double stickyDist = Double.MAX_VALUE;
 		// Search two layers: the block containing the hit, plus one layer along
 		// the hit-face normal. When clicking a floating segment, the ray passes
 		// through the collision-less line and lands on the wall behind, exactly
@@ -88,13 +119,33 @@ public class ConnectionHitTester {
 							double d = distanceToPath(level, state, behaviour, connection, hit);
 							if (d < bestDist) {
 								bestDist = d;
-								best = new Hit(connection.from, behaviour.getPanelPosition());
+								best = new Hit(connection.from, behaviour.getPanelPosition(), d);
+							}
+							// Remember the sticky connection's own distance (its
+							// distance may exceed bestDist — that is the whole point
+							// of hysteresis)
+							if (stickyFrom != null && stickyTo != null
+								&& stickyFrom.equals(connection.from)
+								&& stickyTo.equals(behaviour.getPanelPosition())
+								&& d < stickyDist) {
+								stickyDist = d;
+								stickyHit = new Hit(connection.from, behaviour.getPanelPosition(), d);
 							}
 						}
 					}
 				}
 			}
 		}
+		// Hysteresis decision: the sticky line keeps the pick while the crosshair
+		// is still on it, unless a rival is clearly closer (a deliberate move).
+		// Crossing/overlapping lines produce near-tied distances, so the margin
+		// prevents flicker; once the crosshair truly leaves (stickyDist beyond
+		// the threshold) or lands decisively on another line, the pick follows.
+		// (When the sticky line is itself the nearest, returning it is identical
+		// to returning best — no special case needed.)
+		if (stickyHit != null && stickyDist <= HIT_THRESHOLD
+				&& bestDist > stickyDist - SWITCH_MARGIN)
+			return stickyHit;
 		return best;
 	}
 
