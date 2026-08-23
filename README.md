@@ -2,7 +2,17 @@
 
 Colorize the recipe-mode connection lines of Create's Factory Gauges with the 16 vanilla dyes, so that heavily crossed networks stay readable at a glance.
 
-![A crossed gauge network with color-coded links](images/crossing-network.png)
+## Before / After
+
+The same network, once vanilla and once color-coded:
+
+**Vanilla** — link colors only reflect recipe status, so you can't tell which line belongs to which recipe:
+
+![The same gauge network in vanilla, uncolored](images/vanilla-network.png)
+
+**With Colored Connections** — each recipe keeps its own dye color, and every link stays traceable at a glance:
+
+![The same gauge network, color-coded with dyes](images/dense-network.png)
 
 ## Features
 
@@ -20,13 +30,9 @@ All 16 dye colors, applied to gauge links:
 
 ![Every dye color applied to a connection](images/all-16-colors.png)
 
-A dense network keeps every link traceable once color-coded:
+Crossed links stay distinguishable where they overlap:
 
-![A dense gauge network with color-coded links](images/dense-network.png)
-
-Inherited colors propagate through a production chain — one dye at the top spreads down every following link:
-
-![Color inheritance across a production chain](images/color-inheritance.png)
+![A crossed gauge network with color-coded links](images/crossing-network.png)
 
 ## Requirements
 
