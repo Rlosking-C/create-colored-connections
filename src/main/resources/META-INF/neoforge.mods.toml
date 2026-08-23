@@ -5,7 +5,7 @@ license = "MIT"
 
 [[mods]]
 modId = "create_colored_connections"
-version = "0.1.0"
+version = "${mod_version}"
 displayName = "Create: Colored Connections"
 logoFile = "icon.png"
 authors = "Rlosking-C"
