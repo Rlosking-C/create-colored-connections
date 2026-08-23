@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.1.1
+
+- Dyeing no longer consumes the dye: holding any dye is enough, and you can recolor as often as you like. The color is an organizational tag, not a crafted product.
+
 ## 0.1.0
 
 Initial release.
