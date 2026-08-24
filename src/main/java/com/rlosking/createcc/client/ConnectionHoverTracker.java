@@ -1,10 +1,10 @@
-package com.colconn.createcc.client;
+package com.rlosking.createcc.client;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.colconn.createcc.ConnectionHitTester;
+import com.rlosking.createcc.ConnectionHitTester;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 
 import net.minecraft.client.Minecraft;

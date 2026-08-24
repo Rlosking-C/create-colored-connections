@@ -1,10 +1,10 @@
-package com.colconn.createcc.network;
+package com.rlosking.createcc.network;
 
 import java.util.List;
 
-import com.colconn.createcc.ColoredConnections;
-import com.colconn.createcc.ConnectionColorManager;
-import com.colconn.createcc.ConnectionKey;
+import com.rlosking.createcc.ColoredConnections;
+import com.rlosking.createcc.ConnectionColorManager;
+import com.rlosking.createcc.ConnectionKey;
 
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;

@@ -1,7 +1,7 @@
-package com.colconn.createcc.network;
+package com.rlosking.createcc.network;
 
-import com.colconn.createcc.ColoredConnections;
-import com.colconn.createcc.ConnectionColorManager;
+import com.rlosking.createcc.ColoredConnections;
+import com.rlosking.createcc.ConnectionColorManager;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 
 import io.netty.buffer.ByteBuf;
