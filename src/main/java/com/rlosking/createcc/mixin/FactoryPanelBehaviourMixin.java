@@ -1,4 +1,4 @@
-package com.colconn.createcc.mixin;
+package com.rlosking.createcc.mixin;
 
 import java.util.Optional;
 
@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.colconn.createcc.ConnectionColorManager;
-import com.colconn.createcc.ConnectionKey;
+import com.rlosking.createcc.ConnectionColorManager;
+import com.rlosking.createcc.ConnectionKey;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelConnection;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;

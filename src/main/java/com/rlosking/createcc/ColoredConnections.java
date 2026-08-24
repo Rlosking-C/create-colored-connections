@@ -1,4 +1,4 @@
-package com.colconn.createcc;
+package com.rlosking.createcc;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -50,7 +50,7 @@ public class ColoredConnections {
 	public ColoredConnections(IEventBus modBus, ModContainer container) {
 		// Payload registration is a mod-bus event: attach explicitly to avoid
 		// the bus ambiguity of @EventBusSubscriber
-		modBus.addListener(com.colconn.createcc.network.ColoredConnectionNetwork::register);
+		modBus.addListener(com.rlosking.createcc.network.ColoredConnectionNetwork::register);
 	}
 
 	/**

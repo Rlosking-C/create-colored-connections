@@ -1,4 +1,4 @@
-package com.colconn.createcc;
+package com.rlosking.createcc;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

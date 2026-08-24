@@ -1,4 +1,4 @@
-package com.colconn.createcc.mixin.client;
+package com.rlosking.createcc.mixin.client;
 
 import java.util.List;
 
@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.colconn.createcc.ConnectionColorManager;
-import com.colconn.createcc.client.ConnectionHoverTracker;
+import com.rlosking.createcc.ConnectionColorManager;
+import com.rlosking.createcc.client.ConnectionHoverTracker;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.AllSpriteShifts;

@@ -1,8 +1,8 @@
-package com.colconn.createcc.client;
+package com.rlosking.createcc.client;
 
-import com.colconn.createcc.ColoredConnections;
-import com.colconn.createcc.ConnectionHitTester;
-import com.colconn.createcc.network.ColorConnectionPacket;
+import com.rlosking.createcc.ColoredConnections;
+import com.rlosking.createcc.ConnectionHitTester;
+import com.rlosking.createcc.network.ColorConnectionPacket;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;

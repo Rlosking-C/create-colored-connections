@@ -1,9 +1,9 @@
-package com.colconn.createcc.network;
+package com.rlosking.createcc.network;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.colconn.createcc.ConnectionColorManager;
+import com.rlosking.createcc.ConnectionColorManager;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
@@ -59,7 +59,7 @@ public class ColoredConnectionNetwork {
 	 * defaults to the game bus, keeping it separate from the mod-bus
 	 * registration above.
 	 */
-	@EventBusSubscriber(modid = com.colconn.createcc.ColoredConnections.MODID)
+	@EventBusSubscriber(modid = com.rlosking.createcc.ColoredConnections.MODID)
 	public static class GameEvents {
 
 		/**
