@@ -24,6 +24,9 @@ The same network, once vanilla and once color-coded:
 - **Sticky hover.** Once a line is hovered it stays picked while the crosshair is on it; small mouse movements over crossing or overlapping lines no longer make the highlight jump between them. The dye click targets exactly the line that is lifted on screen.
 - **Link lines are never dyed.** Redstone and display link lines carry status semantics in their color and are left fully vanilla.
 
+## Roadmap
+Planned in 0.2.0: pick two gauges with shift+right-click to dye every link along the shortest path between them, with a live preview
+
 ## Gallery
 
 All 16 dye colors, applied to gauge links:
