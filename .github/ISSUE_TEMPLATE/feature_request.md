@@ -1,11 +1,17 @@
+---
 name: Feature request
-about: Suggest a new idea for the mod
+about: Suggest an idea for this mod
 labels: enhancement
-body:
-  - type: textarea
-    id: description
-    attributes:
-      label: What would you like to see?
-      description: Describe the idea and the use case behind it.
-    validations:
-      required: true
+---
+
+**Is your feature request related to a problem?**
+A description of what is missing or annoying today.
+
+**Describe the solution you'd like**
+What should happen instead?
+
+**Describe alternatives you've considered**
+Other ways to solve it, including other mods.
+
+**Additional context**
+Screenshots, mock-ups, or links that help explain the idea.

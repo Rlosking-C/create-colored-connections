@@ -2,6 +2,8 @@ package com.rlosking.createcc.network;
 
 import com.rlosking.createcc.ColoredConnections;
 import com.rlosking.createcc.ConnectionColorManager;
+import com.rlosking.createcc.CreateCCConfig;
+import com.rlosking.createcc.DyeEffects;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 
 import io.netty.buffer.ByteBuf;
@@ -21,9 +23,11 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  *
  * <p>The server triple-validates: player identity, distance (prevents
  * remote cheat-coloring), and that the matching dye is actually held;
- * the dye is never consumed — coloring is a free visual tag, not a
- * crafting cost. Persistence and broadcasting
- * are handled by {@link ConnectionColorManager#setColor}.</p>
+ * persistence and broadcasting are handled by
+ * {@link ConnectionColorManager#setColor}. By default the dye is never
+ * consumed — coloring is a free visual tag, not a crafting cost — but
+ * {@link CreateCCConfig#DYE_CONSUMPTION} can make dyeing cost one dye per
+ * action in survival mode for packs that want it.</p>
  */
 public record ColorConnectionPacket(FactoryPanelPosition from, FactoryPanelPosition to, int dyeOrdinal) implements CustomPacketPayload {
 
@@ -60,28 +64,34 @@ public record ColorConnectionPacket(FactoryPanelPosition from, FactoryPanelPosit
 		// (same order of magnitude as the gauge interaction distance)
 		if (player.position().distanceToSqr(payload.to().pos().getCenter()) > 64 * 64)
 			return;
-		// Validation: the matching dye must actually be held (black = clear-color
-		// semantics); it is never consumed
-		if (!holdsDye(player, payload.dyeOrdinal()))
+		// Validation: the matching dye must actually be held (black = clear-color semantics)
+		InteractionHand hand = heldDyeHand(player, payload.dyeOrdinal());
+		if (hand == null)
 			return;
+		// Optional dye cost (config-gated, default off, survival only):
+		// colors are free organizational tags unless a pack says otherwise
+		if (CreateCCConfig.DYE_CONSUMPTION.get() && !player.isCreative())
+			player.getItemInHand(hand).shrink(1);
 		DyeColor dye = payload.dyeOrdinal() < 0 ? null : DyeColor.byId(payload.dyeOrdinal());
 		ConnectionColorManager.setColor(serverLevel, payload.from(), payload.to(), dye);
+		DyeEffects.play(serverLevel, payload.from(), payload.to(), dye);
 	}
 
 	/**
-	 * Checks that a dye matching the request is held in either hand; black
-	 * corresponds to dyeOrdinal = -1 (clear the color). Creative players
-	 * skip the check, and no game mode ever consumes the dye.
+	 * Finds the hand holding the dye matching a request; black corresponds
+	 * to dyeOrdinal = -1 (clear the color). Creative players skip the check
+	 * (and never pay the optional dye cost). Returns null when no matching
+	 * dye is held. Package-private: the batch packet reuses the same rules.
 	 */
-	private static boolean holdsDye(ServerPlayer player, int dyeOrdinal) {
+	static InteractionHand heldDyeHand(ServerPlayer player, int dyeOrdinal) {
 		if (player.isCreative())
-			return true;
+			return InteractionHand.MAIN_HAND;
 		DyeColor expected = dyeOrdinal < 0 ? DyeColor.BLACK : DyeColor.byId(dyeOrdinal);
 		for (InteractionHand hand : InteractionHand.values()) {
 			ItemStack held = player.getItemInHand(hand);
 			if (held.getItem() instanceof DyeItem dyeItem && dyeItem.getDyeColor() == expected)
-				return true;
+				return hand;
 		}
-		return false;
+		return null;
 	}
 }

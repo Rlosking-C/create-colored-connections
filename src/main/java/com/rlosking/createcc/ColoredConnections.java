@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 
 /**
  * Create: Colored Connections
@@ -51,6 +52,9 @@ public class ColoredConnections {
 		// Payload registration is a mod-bus event: attach explicitly to avoid
 		// the bus ambiguity of @EventBusSubscriber
 		modBus.addListener(com.rlosking.createcc.network.ColoredConnectionNetwork::register);
+		// COMMON config: one shared toml, each side reads only the options it
+		// owns (gameplay/feedback on the server, rendering on the client)
+		container.registerConfig(ModConfig.Type.COMMON, CreateCCConfig.SPEC);
 	}
 
 	/**

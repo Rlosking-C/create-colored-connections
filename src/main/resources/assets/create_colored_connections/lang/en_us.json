@@ -1,4 +1,9 @@
 {
 	"message.create_colored_connections.dyed": "Connection dyed",
-	"message.create_colored_connections.cleared": "Connection color reset"
+	"message.create_colored_connections.cleared": "Connection color reset",
+	"message.create_colored_connections.path_start": "Path started — sweep over gauges to extend it, right-click the last gauge to dye, right-click elsewhere to cancel",
+	"message.create_colored_connections.path_cancel": "Path selection cancelled",
+	"message.create_colored_connections.path_dyed": "Path dyed",
+	"message.create_colored_connections.path_cleared": "Path color reset",
+        "message.create_colored_connections.first_hint": "Colored Connections: right-click a link with a dye to color it; shift+right-click a gauge, sweep over more gauges, then right-click the last one to batch-dye the whole path. Black dye resets."
 }

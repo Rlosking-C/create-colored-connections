@@ -2,9 +2,11 @@ package com.rlosking.createcc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.rlosking.createcc.network.SyncConnectionColorsPacket;
 import com.mojang.serialization.Codec;
@@ -18,6 +20,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -73,6 +76,40 @@ public class ConnectionColorManager {
 
 		PacketDistributor.sendToPlayersTrackingChunk(level, level.getChunkAt(to.pos()).getPos(),
 			new SyncConnectionColorsPacket(List.of(new SyncConnectionColorsPacket.Entry(key, ordinal)), false));
+	}
+
+	/**
+	 * Server side: writes one color to a whole batch of connections and
+	 * broadcasts it as a single sync packet per tracked chunk — used by
+	 * path dyeing, where one action recolors every link between two gauges.
+	 *
+	 * <p>A path can span several chunks; every player tracking any touched
+	 * chunk receives the whole batch (a few duplicate entries on chunk
+	 * boundaries beat a per-connection packet fanout).</p>
+	 *
+	 * @param dye the dye; null or black means clearing the colors
+	 */
+	public static void setColors(ServerLevel level, List<ConnectionKey> keys, DyeColor dye) {
+		if (keys.isEmpty())
+			return;
+		ConnectionColorData data = serverData(level.getServer(), level.dimension());
+		int ordinal = (dye == null || dye == DyeColor.BLACK) ? -1 : dye.ordinal();
+		List<SyncConnectionColorsPacket.Entry> entries = new ArrayList<>(keys.size());
+		for (ConnectionKey key : keys) {
+			if (ordinal < 0)
+				data.colors.remove(key);
+			else
+				data.colors.put(key, dye);
+			entries.add(new SyncConnectionColorsPacket.Entry(key, ordinal));
+		}
+		data.setDirty();
+
+		Set<ChunkPos> chunks = new HashSet<>();
+		for (ConnectionKey key : keys)
+			chunks.add(level.getChunkAt(key.to().pos()).getPos());
+		SyncConnectionColorsPacket packet = new SyncConnectionColorsPacket(entries, false);
+		for (ChunkPos chunk : chunks)
+			PacketDistributor.sendToPlayersTrackingChunk(level, chunk, packet);
 	}
 
 	/**
