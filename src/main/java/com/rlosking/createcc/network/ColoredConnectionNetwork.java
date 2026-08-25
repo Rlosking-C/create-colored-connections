@@ -41,6 +41,10 @@ public class ColoredConnectionNetwork {
 			SyncConnectionColorsPacket::handle);
 		registrar.playToServer(ColorConnectionPacket.TYPE, ColorConnectionPacket.STREAM_CODEC,
 			ColorConnectionPacket::handle);
+		registrar.playToServer(BatchColorConnectionPacket.TYPE, BatchColorConnectionPacket.STREAM_CODEC,
+			BatchColorConnectionPacket::handle);
+		registrar.playToServer(BatchSelectionModePacket.TYPE, BatchSelectionModePacket.STREAM_CODEC,
+			BatchSelectionModePacket::handle);
 	}
 
 	/**
@@ -69,6 +73,17 @@ public class ColoredConnectionNetwork {
 		public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
 			if (event.getEntity() instanceof ServerPlayer player)
 				syncAll(player);
+		}
+
+		/**
+		 * Player logout: drop the batch-selection mode mirror so a returning
+		 * player starts clean (their client's "selection ended" sync may
+		 * never have made it out before the disconnect).
+		 */
+		@SubscribeEvent
+		public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+			if (event.getEntity() instanceof ServerPlayer player)
+				BatchSelectionModePacket.forget(player);
 		}
 
 		/**

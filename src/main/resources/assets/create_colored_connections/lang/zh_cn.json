@@ -1,4 +1,9 @@
 {
 	"message.create_colored_connections.dyed": "连接线已染色",
-	"message.create_colored_connections.cleared": "连接线已恢复原版颜色"
+	"message.create_colored_connections.cleared": "连接线已恢复原版颜色",
+	"message.create_colored_connections.path_start": "路径开始——扫过仪表延伸路径，右键末尾仪表染色，右键空白处取消",
+	"message.create_colored_connections.path_cancel": "已取消路径选择",
+	"message.create_colored_connections.path_dyed": "路径已染色",
+	"message.create_colored_connections.path_cleared": "路径已恢复原版颜色",
+        "message.create_colored_connections.first_hint": "彩色连接线：手持染料右击连线染色；Shift+右击仪表后扫过多个仪表，再右键末尾仪表即可批量染色整条路径，黑色染料复原。"
 }

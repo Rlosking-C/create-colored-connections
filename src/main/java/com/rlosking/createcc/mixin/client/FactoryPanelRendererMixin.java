@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.rlosking.createcc.ConnectionColorManager;
+import com.rlosking.createcc.CreateCCConfig;
 import com.rlosking.createcc.client.ConnectionHoverTracker;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllPartialModels;
@@ -76,8 +77,12 @@ public abstract class FactoryPanelRendererMixin {
 		// follows immediately, and its Y-argument injection point (the
 		// ModifyArg below) only receives the float argument, relying on this
 		// stash to recover the current connection's lift (renderPath calls are
-		// serialized per connection on the render thread; the stash is safe)
-		float hoverLift = ConnectionHoverTracker.liftFor(connection.from, behaviour.getPanelPosition());
+		// serialized per connection on the render thread; the stash is safe).
+		// The config gate here also zeroes the ModifyArg's lift (it reads the
+		// same stash), so disabling hoverLift turns the whole feature off in one place
+		float hoverLift = CreateCCConfig.HOVER_LIFT.get()
+			? ConnectionHoverTracker.liftFor(connection.from, behaviour.getPanelPosition())
+			: 0;
 		ConnectionHoverTracker.stashedLift = hoverLift;
 
 		DyeColor dye = ConnectionColorManager.getColor(behaviour.getWorld(), connection.from,
