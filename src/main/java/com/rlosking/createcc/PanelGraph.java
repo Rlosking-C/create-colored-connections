@@ -76,6 +76,34 @@ public final class PanelGraph {
 	}
 
 	/**
+	 * The connected component of {@code anchor}: every panel reachable through
+	 * recipe links, color ignored — the "one factory" scope for goggles
+	 * tracing. Runs on the client each second at most (trace refresh), so the
+	 * same visit cap and never-sync-load chunk scan as the path search apply.
+	 */
+	public static Set<FactoryPanelPosition> componentOf(Level level, FactoryPanelPosition anchor) {
+		Set<FactoryPanelPosition> visited = new HashSet<>();
+		Queue<FactoryPanelPosition> queue = new ArrayDeque<>();
+		visited.add(anchor);
+		queue.add(anchor);
+
+		while (!queue.isEmpty() && visited.size() < MAX_VISITED) {
+			FactoryPanelPosition node = queue.poll();
+			FactoryPanelBehaviour behaviour = FactoryPanelBehaviour.at(level, node);
+			if (behaviour == null)
+				continue;
+
+			for (FactoryPanelPosition source : behaviour.targetedBy.keySet())
+				if (visited.add(source))
+					queue.add(source);
+			for (ConnectionKey edge : downstreamEdges(level, node, null))
+				if (visited.add(edge.to()))
+					queue.add(edge.to());
+		}
+		return visited;
+	}
+
+	/**
 	 * Finds the shortest connection path between two panels.
 	 *
 	 * @param downstreamCache optional per-node cache of discovered outgoing

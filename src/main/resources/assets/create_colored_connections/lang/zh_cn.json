@@ -5,5 +5,14 @@
 	"message.create_colored_connections.path_cancel": "已取消路径选择",
 	"message.create_colored_connections.path_dyed": "路径已染色",
 	"message.create_colored_connections.path_cleared": "路径已恢复原版颜色",
+	"gui.create_colored_connections.trace_header": "该条产线中：",
+	"gui.create_colored_connections.trace_summary": "存在%1$s条%2$s线路，%3$s个仪表",
+	"gui.create_colored_connections.trace_of_which": "其中：",
+	"gui.create_colored_connections.trace_status_separator": "，",
+	"gui.create_colored_connections.trace_failed": "%s条失败",
+	"gui.create_colored_connections.trace_shortage": "还缺 %s 个",
+	"gui.create_colored_connections.trace_running": "%s条运行",
+	"gui.create_colored_connections.trace_idle": "%s条待机",
+	"gui.create_colored_connections.trace_done": "%s条满足",
         "message.create_colored_connections.first_hint": "彩色连接线：手持染料右击连线染色；Shift+右击仪表后扫过多个仪表，再右键末尾仪表即可批量染色整条路径，黑色染料复原。"
 }

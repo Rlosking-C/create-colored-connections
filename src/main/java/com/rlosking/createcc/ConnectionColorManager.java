@@ -153,6 +153,18 @@ public class ConnectionColorManager {
 	}
 
 	/**
+	 * Client side: every colored connection key of one dye — the candidate set
+	 * a goggles trace filters down to the hovered link's connected factory.
+	 */
+	public static Set<ConnectionKey> clientKeysOfColor(DyeColor dye) {
+		Set<ConnectionKey> keys = new HashSet<>();
+		for (Map.Entry<ConnectionKey, DyeColor> entry : clientColors.entrySet())
+			if (entry.getValue() == dye)
+				keys.add(entry.getKey());
+		return keys;
+	}
+
+	/**
 	 * Client side: applies one sync entry (ordinal = -1 removes the entry).
 	 */
 	public static void clientApply(ConnectionKey key, int dyeOrdinal) {

@@ -29,6 +29,15 @@ public class CreateCCConfig {
 	/** Hover lift: raise the hovered link above its neighbors at crossings */
 	public static final ModConfigSpec.BooleanValue HOVER_LIFT;
 
+	/** Master switch for goggles tracing (client option) */
+	public static final ModConfigSpec.BooleanValue GOGGLES_TRACING;
+
+	/** Max eye-to-hit distance for a hover to start or refresh a trace (blocks, client option) */
+	public static final ModConfigSpec.DoubleValue TRACE_DISTANCE;
+
+	/** Trace lines appended to Create's goggle overlay while a trace is active (client option) */
+	public static final ModConfigSpec.BooleanValue TRACE_HUD;
+
 	static {
 		BUILDER.push("gameplay");
 		DYE_CONSUMPTION = BUILDER
@@ -54,6 +63,25 @@ public class CreateCCConfig {
 			.comment("Lift the hovered connection line above its neighbors",
 				"where links cross or overlap (sticky hover picking stays on)")
 			.define("hoverLift", true);
+		BUILDER.pop();
+
+		BUILDER.push("tracing");
+		GOGGLES_TRACING = BUILDER
+			.comment("Goggles tracing: wearing engineer goggles and hovering a dyed",
+				"link highlights its whole color group (same color, same connected",
+				"factory) while every other connection line of that factory dims",
+				"to gray; the highlight follows the crosshair and fades out as",
+				"soon as it leaves the dyed links")
+			.define("gogglesTracing", true);
+		TRACE_DISTANCE = BUILDER
+			.comment("Max distance (blocks) from the eye to a dyed link for",
+				"hovering it to start or refresh a trace")
+			.defineInRange("traceDistance", 24.0, 4.0, 64.0);
+		TRACE_HUD = BUILDER
+			.comment("Trace lines appended to Create's goggle overlay while tracing:",
+				"group color, link and gauge counts, and the idle / running /",
+				"done / failed breakdown (failed count in red)")
+			.define("traceHud", true);
 		BUILDER.pop();
 	}
 
