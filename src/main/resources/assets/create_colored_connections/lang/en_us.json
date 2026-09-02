@@ -5,5 +5,14 @@
 	"message.create_colored_connections.path_cancel": "Path selection cancelled",
 	"message.create_colored_connections.path_dyed": "Path dyed",
 	"message.create_colored_connections.path_cleared": "Path color reset",
+	"gui.create_colored_connections.trace_header": "In this production line:",
+	"gui.create_colored_connections.trace_summary": "%1$s %2$s links across %3$s gauges",
+	"gui.create_colored_connections.trace_of_which": "Of which:",
+	"gui.create_colored_connections.trace_status_separator": ", ",
+	"gui.create_colored_connections.trace_failed": "%s failed",
+	"gui.create_colored_connections.trace_shortage": "Short by %s",
+	"gui.create_colored_connections.trace_running": "%s running",
+	"gui.create_colored_connections.trace_idle": "%s idle",
+	"gui.create_colored_connections.trace_done": "%s met",
         "message.create_colored_connections.first_hint": "Colored Connections: right-click a link with a dye to color it; shift+right-click a gauge, sweep over more gauges, then right-click the last one to batch-dye the whole path. Black dye resets."
 }

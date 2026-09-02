@@ -6,11 +6,13 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.rlosking.createcc.ConnectionColorManager;
 import com.rlosking.createcc.CreateCCConfig;
 import com.rlosking.createcc.client.ConnectionHoverTracker;
+import com.rlosking.createcc.client.GogglesTracing;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.AllSpriteShifts;
@@ -25,6 +27,7 @@ import com.simibubi.create.content.redstone.displayLink.DisplayLinkBlockEntity;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
+import net.createmod.catnip.theme.Color;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Direction;
@@ -69,6 +72,16 @@ import net.minecraft.world.level.block.state.BlockState;
 @Mixin(FactoryPanelRenderer.class)
 public abstract class FactoryPanelRendererMixin {
 
+	/**
+	 * Goggles tracing dim target. Mid gray — darker than the vanilla idle
+	 * gray line so a traced-out link reads as "switched off" rather than
+	 * "idle", but light enough to keep a shade of the dye's original hue
+	 * (a dark near-black target made dimmed links look dead and ugly).
+	 * Alpha stays 255 because the cutout render type has no blending;
+	 * dimming is achieved by color alone.
+	 */
+	private static final int TRACE_GRAY = 0xFF606060;
+
 	@Inject(method = "renderPath", at = @At("HEAD"), cancellable = true)
 	private static void createcc$renderDyedPath(FactoryPanelBehaviour behaviour, FactoryPanelConnection connection,
 		float partialTicks, PoseStack ms, MultiBufferSource buffer, int light, int overlay, CallbackInfo ci) {
@@ -100,6 +113,12 @@ public abstract class FactoryPanelRendererMixin {
 		if (sbe != null && (sbe.blockEntity instanceof RedstoneLinkBlockEntity
 			|| sbe.blockEntity instanceof DisplayLinkBlockEntity))
 			return;
+
+		// Goggles tracing: a link outside the traced color group dims to gray.
+		// Both this dye underlay and the vanilla core (redirected below) dim
+		// by the same strength, so a dimmed link never keeps a vivid dye
+		// border around a gray core
+		float traceGray = GogglesTracing.grayStrengthFor(connection.from, behaviour.getPanelPosition());
 
 		float glow = behaviour.bulb.getValue(partialTicks);
 		// Restock flashing (vanilla condition copied): the gray line briefly
@@ -169,16 +188,16 @@ public abstract class FactoryPanelRendererMixin {
 				// Two same-color layers stacked: the shaft takes A's 4px, the
 				// barbs take B's 6px — exactly 1px of border everywhere
 				createcc$underlay(AllPartialModels.FACTORY_PANEL_LINES.get(modelDir), blockState, alongX, 2, 1,
-					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, ms, buffer, light, overlay);
+					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 				createcc$underlay(AllPartialModels.FACTORY_PANEL_ARROWS.get(modelDir), blockState, alongX, 1.5f, 1,
-					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, ms, buffer, light, overlay);
+					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 			} else {
 				// Straight segment at 2× width (2px→4px, 1px peeking per side);
 				// the idle full-line keeps its original width
 				PartialModel partial = (i == 0 ? AllPartialModels.FACTORY_PANEL_ARROWS
 					: AllPartialModels.FACTORY_PANEL_LINES).get(modelDir);
 				createcc$underlay(partial, blockState, alongX, idle ? 1 : 2, 1,
-					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, ms, buffer, light, overlay);
+					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 			}
 		}
 
@@ -201,10 +220,14 @@ public abstract class FactoryPanelRendererMixin {
 	 *                    covers [-0.5, 0] along the length axis, extending
 	 *                    from the anchor toward the segment start, so scaling
 	 *                    crops from the segment-start end)
+	 * @param traceGray   goggles-tracing dim strength (0..1) for this link;
+	 *                    the dye color mixes toward {@link #TRACE_GRAY} so a
+	 *                    dimmed link's border fades with its vanilla core
 	 */
 	private static void createcc$underlay(PartialModel partial, BlockState blockState, boolean alongX,
 		float widthScale, float lengthScale, float xRot, float yRot, float anchorX, float anchorZ, float x, float z,
-		float yLayer, boolean scroll, int dyeColor, PoseStack ms, MultiBufferSource buffer, int light, int overlay) {
+		float yLayer, boolean scroll, int dyeColor, float traceGray, PoseStack ms, MultiBufferSource buffer,
+		int light, int overlay) {
 		SuperByteBuffer sprite = CachedBuffers.partial(partial, blockState)
 			.rotateCentered(yRot, Direction.UP)
 			.rotateCentered(xRot, Direction.EAST)
@@ -221,10 +244,31 @@ public abstract class FactoryPanelRendererMixin {
 		// the dye color scrolls along
 		if (scroll)
 			sprite.shiftUV(AllSpriteShifts.FACTORY_PANEL_CONNECTIONS);
-		sprite.color(dyeColor)
+		sprite.color(traceGray > 0 ? Color.mixColors(dyeColor, TRACE_GRAY, traceGray) : dyeColor)
 			.light(light)
 			.overlay(overlay)
 			.renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
+	}
+
+	/**
+	 * Goggles tracing, vanilla-core half: renderPath colors every segment
+	 * through exactly one {@code SuperByteBuffer.color(int)} call (the line's
+	 * status color); while a trace is active, every link outside the traced
+	 * group mixes toward the trace gray by the current fade strength instead.
+	 * This covers all vanilla-rendered lines — uncolored links, the cores of
+	 * dyed links and status flashes — so the whole network except the traced
+	 * color group dims uniformly. The redirect handler captures renderPath's
+	 * own arguments to identify the link being rendered.
+	 */
+	@Redirect(method = "renderPath", at = @At(value = "INVOKE",
+		target = "Lnet/createmod/catnip/render/SuperByteBuffer;color(I)Lnet/createmod/catnip/render/SuperByteBuffer;"))
+	private static SuperByteBuffer createcc$traceDimVanillaLine(SuperByteBuffer sprite, int color,
+		FactoryPanelBehaviour behaviour, FactoryPanelConnection connection, float partialTicks, PoseStack ms,
+		MultiBufferSource buffer, int light, int overlay) {
+		float traceGray = GogglesTracing.grayStrengthFor(connection.from, behaviour.getPanelPosition());
+		if (traceGray <= 0)
+			return sprite.color(color);
+		return sprite.color(Color.mixColors(color, TRACE_GRAY, traceGray));
 	}
 
 	/**
