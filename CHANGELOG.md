@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 - The wire's hover tooltip (after Factory Controller's hover delay) gains a dye line showing the applied dye, its name rendered in the dye's own color.
 - Blueprint import carries colors: scanning wall gauges with a blueprint and quill keeps their link colors when the board is imported into the Factory Controller GUI. Colors also survive saving a board as a blueprint and placing that blueprint into another controller.
 - Only logistics (ingredient) wires are dyeable — number and redstone wires are left fully vanilla, mirroring the world-side rule that status-semantic lines stay untouched.
+- Special thanks to [flamemaster396](https://modrinth.com/user/flamemaster396) for suggesting this feature!
 
 ## 0.3.0
 
