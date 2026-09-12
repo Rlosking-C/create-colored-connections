@@ -14,5 +14,6 @@
 	"gui.create_colored_connections.trace_running": "%s条运行",
 	"gui.create_colored_connections.trace_idle": "%s条待机",
 	"gui.create_colored_connections.trace_done": "%s条满足",
+	"gui.create_colored_connections.wire_dye": "染料：%s",
         "message.create_colored_connections.first_hint": "彩色连接线：手持染料右击连线染色；Shift+右击仪表后扫过多个仪表，再右键末尾仪表即可批量染色整条路径，黑色染料复原。"
 }

@@ -20,6 +20,9 @@ public class CreateCCConfig {
 	/** Consume one dye per dyeing action in survival mode (default: off) */
 	public static final ModConfigSpec.BooleanValue DYE_CONSUMPTION;
 
+	/** Dye ingredient wires inside the Factory Controller GUI (compat option) */
+	public static final ModConfigSpec.BooleanValue FACTORY_CONTROLLER_DYEING;
+
 	/** One-time chat hint the first time a player places a factory gauge */
 	public static final ModConfigSpec.BooleanValue FIRST_HINT;
 
@@ -52,6 +55,12 @@ public class CreateCCConfig {
 			.comment("Show a one-time chat hint the first time a player",
 				"places a factory gauge (explains dyeing and path dyeing)")
 			.define("firstGaugeHint", true);
+		FACTORY_CONTROLLER_DYEING = BUILDER
+			.comment("Dye ingredient wires inside the Factory Controller GUI:",
+				"pick a dye up onto the cursor and right-click the wire",
+				"(a dye held in the main hand also works)",
+				"(Create: Factory Controller integration; no effect without the mod)")
+			.define("factoryControllerDyeing", true);
 		DYE_EFFECTS = BUILDER
 			.comment("Play the gauge-link sound and dye-colored particles",
 				"when a link is dyed")

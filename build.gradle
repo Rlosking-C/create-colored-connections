@@ -55,6 +55,10 @@ dependencies {
     runtimeOnly "maven.modrinth:extra-gauges:2.1.2"
     // Extra Gauges dependency: Create: Deployer API
     runtimeOnly "maven.modrinth:deployer:0.1.2"
+    // Compatibility integration against Create: Factory Controller (optional at runtime,
+    // guarded by ModList checks and a gated mixin config). Requires Create >= 6.0.10 and
+    // NeoForge >= 21.1.227 (both satisfied above)
+    implementation "maven.modrinth:create-factory-controller:1.2.0-neoforge-1.21.1"
 }
 
 tasks.withType(JavaCompile).configureEach {

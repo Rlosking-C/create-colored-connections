@@ -45,6 +45,10 @@ public class ColoredConnectionNetwork {
 			BatchColorConnectionPacket::handle);
 		registrar.playToServer(BatchSelectionModePacket.TYPE, BatchSelectionModePacket.STREAM_CODEC,
 			BatchSelectionModePacket::handle);
+		// Factory Controller GUI dyeing; the payload is FC-free and safely
+		// registered when the mod is absent (the handler no-ops without it)
+		registrar.playToServer(FCColorConnectionPacket.TYPE, FCColorConnectionPacket.STREAM_CODEC,
+			FCColorConnectionPacket::handle);
 	}
 
 	/**

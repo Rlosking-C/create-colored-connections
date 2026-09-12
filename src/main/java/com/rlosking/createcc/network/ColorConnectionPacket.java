@@ -81,9 +81,10 @@ public record ColorConnectionPacket(FactoryPanelPosition from, FactoryPanelPosit
 	 * Finds the hand holding the dye matching a request; black corresponds
 	 * to dyeOrdinal = -1 (clear the color). Creative players skip the check
 	 * (and never pay the optional dye cost). Returns null when no matching
-	 * dye is held. Package-private: the batch packet reuses the same rules.
+	 * dye is held. Public: the Factory Controller compat layer reuses the
+	 * same rules for GUI wire dyeing.
 	 */
-	static InteractionHand heldDyeHand(ServerPlayer player, int dyeOrdinal) {
+	public static InteractionHand heldDyeHand(ServerPlayer player, int dyeOrdinal) {
 		if (player.isCreative())
 			return InteractionHand.MAIN_HAND;
 		DyeColor expected = dyeOrdinal < 0 ? DyeColor.BLACK : DyeColor.byId(dyeOrdinal);
