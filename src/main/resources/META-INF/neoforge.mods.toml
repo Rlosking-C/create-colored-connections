@@ -38,7 +38,7 @@ crossed networks stay readable at a glance.
 [[dependencies.create_colored_connections]]
     modId = "createfactorycontroller"
     type = "optional"
-    versionRange = "[1.2.0,)"
+    versionRange = "[1.2.1,)"
     ordering = "AFTER"
     side = "BOTH"
 

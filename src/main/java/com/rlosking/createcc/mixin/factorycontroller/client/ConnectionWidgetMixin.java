@@ -4,15 +4,18 @@ import com.rlosking.createcc.compat.DyeUnderlay;
 import com.rlosking.createcc.compat.VirtualConnectionDye;
 
 import io.github.nbcss.createfactorycontroller.content.block.ComponentHolder;
-import io.github.nbcss.createfactorycontroller.content.component.VirtualGaugeBehaviour;
+import io.github.nbcss.createfactorycontroller.content.component.gauge.VirtualGaugeBehaviour;
 import io.github.nbcss.createfactorycontroller.content.component.connection.Connection;
 import io.github.nbcss.createfactorycontroller.content.render.VirtualConnectionRenderer;
 import io.github.nbcss.createfactorycontroller.content.gui.widget.ConnectionWidget;
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
 import org.joml.Vector2i;
@@ -97,8 +100,11 @@ public abstract class ConnectionWidgetMixin {
 		int dyeColor = 0xFF000000 | DyeColor.byId(dye - 1).getTextureDiffuseColor();
 
 		// Flash state, computed exactly like the vanilla render does: the wire
-		// animates (and briefly mixes green/red) after each request
-		long animationTick = connection.getAnimationTick(holder);
+		// animates (and briefly mixes green/red) after each request. Since FC
+		// 1.2.1 the "now" timestamp is passed in by the caller (null level
+		// meaning "no flash"), mirroring ConnectionWidget.render's own call.
+		ClientLevel level = Minecraft.getInstance().level;
+		long animationTick = connection.getFlashTick(holder, level != null ? level.getGameTime() : -1L);
 		boolean flashing = false;
 		if (animationTick >= 0) {
 			float age = animationTick + AnimationTickHolder.getPartialTicks();
@@ -145,6 +151,11 @@ public abstract class ConnectionWidgetMixin {
 	 * ({@code DyeColor.getTextColor()}, vanilla's bright-on-dark palette from
 	 * sign text), so "染料：青色染料" reads in cyan.
 	 *
+	 * <p>Since FC 1.2.1 the tooltip is a list of already-formatted
+	 * {@link FormattedCharSequence} lines (the overlapping-count rework), so
+	 * the dye line is flattened the same way — {@code getVisualOrderText()}
+	 * keeps the per-dye color of the styled name.</p>
+	 *
 	 * <p>Black needs no special case: GUI black dyeing clears the color
 	 * (dye field 0, no line at all), and world-side black is never stored,
 	 * so the unreachable black entry would only matter for readability.
@@ -154,16 +165,16 @@ public abstract class ConnectionWidgetMixin {
 	 */
 	@Inject(method = "getTooltip", at = @At("RETURN"))
 	private void createcc$dyeTooltipLine(ComponentHolder holder, int count, int index, boolean locked,
-			CallbackInfoReturnable<List<Component>> cir) {
+			CallbackInfoReturnable<List<FormattedCharSequence>> cir) {
 		if (!(connection instanceof VirtualConnectionDye dyeable) || dyeable.createcc$getDye() == 0)
 			return;
-		List<Component> lines = cir.getReturnValue();
+		List<FormattedCharSequence> lines = cir.getReturnValue();
 		if (lines.isEmpty())
 			return;
 		DyeColor dye = DyeColor.byId(dyeable.createcc$getDye() - 1);
 		Component dyeName = Component.translatable("item.minecraft." + dye.getName() + "_dye")
 				.withStyle(Style.EMPTY.withColor(dye.getTextColor()));
 		lines.add(1, Component.translatable("gui.create_colored_connections.wire_dye", dyeName)
-				.withStyle(ChatFormatting.GRAY));
+				.withStyle(ChatFormatting.GRAY).getVisualOrderText());
 	}
 }

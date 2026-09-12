@@ -56,9 +56,10 @@ dependencies {
     // Extra Gauges dependency: Create: Deployer API
     runtimeOnly "maven.modrinth:deployer:0.1.2"
     // Compatibility integration against Create: Factory Controller (optional at runtime,
-    // guarded by ModList checks and a gated mixin config). Requires Create >= 6.0.10 and
-    // NeoForge >= 21.1.227 (both satisfied above)
-    implementation "maven.modrinth:create-factory-controller:1.2.0-neoforge-1.21.1"
+    // guarded by a version-gated mixin config — FC >= 1.2.1, keep in sync with
+    // FCCompatMixinPlugin.FC_MIN_VERSION and FactoryControllerCompat.FC_MIN_VERSION).
+    // Requires Create >= 6.0.10 and NeoForge >= 21.1.227 (both satisfied above)
+    implementation "maven.modrinth:create-factory-controller:1.2.1-neoforge-1.21.1"
 }
 
 tasks.withType(JavaCompile).configureEach {
