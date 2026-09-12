@@ -19,6 +19,7 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.IModInfo;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
@@ -39,11 +40,55 @@ public final class FactoryControllerCompat {
 	private static final org.apache.logging.log4j.Logger LOGGER =
 			org.apache.logging.log4j.LogManager.getLogger("createcc-fc");
 
+	/**
+	 * Minimum supported Factory Controller version — keep in sync with
+	 * {@code FCCompatMixinPlugin.FC_MIN_VERSION} and the pinned dependency in
+	 * build.gradle. Older FC releases lack the APIs the mixins compile against,
+	 * so both the mixins and this runtime path must stay off for them.
+	 */
+	private static final String FC_MIN_VERSION = "1.2.1";
+
 	private FactoryControllerCompat() {}
 
-	/** @return whether Create: Factory Controller is installed on this side */
+	/**
+	 * @return whether a supported Factory Controller (present and at least
+	 * {@link #FC_MIN_VERSION}) is installed on this side — the same gate the
+	 * mixin plugin applies at boot, re-checked here because the packet handler
+	 * must not touch {@link VirtualConnectionDye} casts on an unsupporting FC
+	 */
 	public static boolean isLoaded() {
-		return ModList.get().isLoaded("createfactorycontroller");
+		for (IModInfo mod : ModList.get().getMods())
+			if ("createfactorycontroller".equals(mod.getModId()))
+				return versionAtLeast(mod.getVersion().toString(), FC_MIN_VERSION);
+		return false;
+	}
+
+	/**
+	 * Compares the leading numeric components only ("1.2.1-neoforge-1.21.1"
+	 * is 1.2.1), so loader/minecraft suffixes never make a version look newer
+	 * than it is.
+	 */
+	private static boolean versionAtLeast(String version, String minimum) {
+		int[] v = numericParts(version);
+		int[] m = numericParts(minimum);
+		for (int i = 0; i < Math.max(v.length, m.length); i++) {
+			int a = i < v.length ? v[i] : 0;
+			int b = i < m.length ? m[i] : 0;
+			if (a != b)
+				return a > b;
+		}
+		return true;
+	}
+
+	private static int[] numericParts(String version) {
+		String numeric = version.split("[^0-9.]", 2)[0];
+		if (numeric.isEmpty())
+			return new int[0];
+		String[] parts = numeric.split("\\.");
+		int[] out = new int[parts.length];
+		for (int i = 0; i < parts.length; i++)
+			out[i] = parts[i].isEmpty() ? 0 : Integer.parseInt(parts[i]);
+		return out;
 	}
 
 	/**
