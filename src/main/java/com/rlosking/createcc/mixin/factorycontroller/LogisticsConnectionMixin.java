@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * <p>This mixin is data only — the visual half lives in
  * {@code client.ConnectionWidgetMixin}, which mirrors the world renderer's
  * two looks (idle gray line replaced by the dye, active line keeps its
- * status color and gains a 1px dye border) instead of overriding
+ * status color and gains a 2px dye border per side) instead of overriding
  * {@code getConnectionColor} with a flat dye color.</p>
  */
 @Mixin(LogisticsConnection.class)
