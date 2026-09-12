@@ -14,5 +14,6 @@
 	"gui.create_colored_connections.trace_running": "%s running",
 	"gui.create_colored_connections.trace_idle": "%s idle",
 	"gui.create_colored_connections.trace_done": "%s met",
+	"gui.create_colored_connections.wire_dye": "Dye: %s",
         "message.create_colored_connections.first_hint": "Colored Connections: right-click a link with a dye to color it; shift+right-click a gauge, sweep over more gauges, then right-click the last one to batch-dye the whole path. Black dye resets."
 }

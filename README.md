@@ -25,6 +25,7 @@ The same network, once vanilla and once color-coded:
 - **Hover lift.** Looking at any link smoothly lifts the whole line above its neighbors (a few microns — only the occlusion order changes), so you can always tell which line is which where links cross or overlap.
 - **Sticky hover.** Once a line is hovered it stays picked while the crosshair is on it; small mouse movements over crossing or overlapping lines no longer make the highlight jump between them. The dye click targets exactly the line that is lifted on screen.
 - **Goggles tracing.** Wear Create's Engineer's Goggles and rest the crosshair on a dyed link: its whole color group lights up while every other line of the same factory dims to gray — the "read my network" tool for dense factories. The highlight follows the crosshair, cross-fades when you switch to another color, and fades out as soon as you look away. A readout is appended to Create's own goggle overlay: the link and gauge counts of the production line and the idle / running / met / failed breakdown, plus the group's remaining shortage when every gauge requests the same item.
+- **Factory Controller support (optional).** When the [Factory Controller](https://modrinth.com/mod/create-factory-controller) mod is installed, its virtual connection wires become dyeable inside the controller GUI: pick a dye up onto the cursor and right-click a hovered wire — the same pick-up-and-apply gesture as on the world side. The rendering mirrors the wall look (idle wires fully dyed, active wires keep their status core with a textured dye border), the white hover highlight stays, the wire's tooltip names the applied dye in its own color, and scanning wall gauges into a blueprint carries their link colors into the imported board. Only ingredient (logistics) wires are affected — number and redstone wires stay vanilla.
 - **Link lines are never dyed.** Redstone and display link lines carry status semantics in their color and are left fully vanilla.
 
 ## Gallery
@@ -58,6 +59,7 @@ Client **and** server for multiplayer.
 - **0.1** — single-link dyeing, color inheritance, status-preserving rendering, hover lift
 - **0.2** — path dyeing with live green preview, dye/sound feedback, config file, first-placement hint
 - **0.3** — goggles tracing: color-group highlight, factory-scoped graying, overlay readout with link/gauge counts and status breakdown
+- **0.4** — Factory Controller compatibility: GUI wire dyeing, tooltip dye readout, blueprint import color carry
 - **Next** — whatever players actually ask for: [open an issue](https://github.com/Rlosking-C/create-colored-connections/issues)
 
 Nothing on this list is a promise; priorities follow player feedback.

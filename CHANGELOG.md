@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.4.0
+
+- Factory Controller compatibility (optional): when [Factory Controller](https://modrinth.com/mod/create-factory-controller) 1.2.0+ is installed, its virtual connection wires become dyeable too.
+- Dye wires inside the Factory Controller GUI: pick a dye up onto the cursor and right-click a hovered logistics wire to color it — the same pick-up-and-apply gesture as on the world side (a dye in the main hand works as a fallback). Black dye clears the color, the dye is never consumed, and the client-side dyeing config option carries over.
+- The GUI rendering mirrors the world side: idle wires take the dye color over their whole line, active wires keep their vanilla status core and flash animations and gain a textured 2px dye border per side — the same border-to-core proportion as a dyed wall link, reusing Factory Controller's own connection textures.
+- Hovering keeps both: the dye look stays while Factory Controller's white highlight bar still marks the hovered wire.
+- The wire's hover tooltip (after Factory Controller's hover delay) gains a dye line showing the applied dye, its name rendered in the dye's own color.
+- Blueprint import carries colors: scanning wall gauges with a blueprint and quill keeps their link colors when the board is imported into the Factory Controller GUI. Colors also survive saving a board as a blueprint and placing that blueprint into another controller.
+- Only logistics (ingredient) wires are dyeable — number and redstone wires are left fully vanilla, mirroring the world-side rule that status-semantic lines stay untouched.
+
 ## 0.3.0
 
 - Goggles tracing: while wearing Engineer's Goggles, resting the crosshair on a dyed link lights up its whole color group — the "read your network" tool for dense factories.
