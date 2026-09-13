@@ -4,14 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## 0.4.1
 
-- **The Factory Controller integration now requires Factory Controller 1.2.1 or newer.** FC 1.2.1 reworked internal APIs that the GUI dyeing hooks into (a package move plus a renderer and tooltip refactor); the integration was ported onto the new APIs.
-- With an older Factory Controller (e.g. 1.2.0) installed, the integration now detects this and disables itself cleanly — wires stay vanilla, nothing crashes. Update Factory Controller to 1.2.1+ to get GUI wire dyeing back.
-- World-side dyeing, goggles tracing and path dyeing are unaffected — this change only concerns the optional Factory Controller compatibility.
-- Special thanks to [flamemaster396](https://www.curseforge.com/members/flamemaster396/projects) for suggesting the Factory Controller integration in the first place!
-
-## 0.4.0
-
-- Factory Controller compatibility (optional): when [Factory Controller](https://modrinth.com/mod/create-factory-controller) 1.2.0+ is installed, its virtual connection wires become dyeable too.
+- Factory Controller compatibility (optional): when [Factory Controller](https://modrinth.com/mod/create-factory-controller) 1.2.1+ is installed, its virtual connection wires become dyeable too. Older Factory Controller versions disable the integration cleanly — wires stay vanilla, nothing crashes.
 - Dye wires inside the Factory Controller GUI: pick a dye up onto the cursor and right-click a hovered logistics wire to color it — the same pick-up-and-apply gesture as on the world side (a dye in the main hand works as a fallback). Black dye clears the color, the dye is never consumed, and the client-side dyeing config option carries over.
 - The GUI rendering mirrors the world side: idle wires take the dye color over their whole line, active wires keep their vanilla status core and flash animations and gain a textured 2px dye border per side — the same border-to-core proportion as a dyed wall link, reusing Factory Controller's own connection textures.
 - Hovering keeps both: the dye look stays while Factory Controller's white highlight bar still marks the hovered wire.

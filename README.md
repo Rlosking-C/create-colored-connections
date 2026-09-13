@@ -59,8 +59,7 @@ Client **and** server for multiplayer.
 - **0.1** — single-link dyeing, color inheritance, status-preserving rendering, hover lift
 - **0.2** — path dyeing with live green preview, dye/sound feedback, config file, first-placement hint
 - **0.3** — goggles tracing: color-group highlight, factory-scoped graying, overlay readout with link/gauge counts and status breakdown
-- **0.4** — Factory Controller compatibility: GUI wire dyeing, tooltip dye readout, blueprint import color carry
-- **0.4.1** — Factory Controller 1.2.1+ required for the integration (older FC versions disable it cleanly)
+- **0.4.1** — Factory Controller compatibility: GUI wire dyeing, tooltip dye readout, blueprint import color carry (requires Factory Controller 1.2.1+; older FC versions disable the integration cleanly)
 - **Next** — whatever players actually ask for: [open an issue](https://github.com/Rlosking-C/create-colored-connections/issues)
 
 Nothing on this list is a promise; priorities follow player feedback.
