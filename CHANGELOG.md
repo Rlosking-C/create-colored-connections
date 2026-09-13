@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 - **The Factory Controller integration now requires Factory Controller 1.2.1 or newer.** FC 1.2.1 reworked internal APIs that the GUI dyeing hooks into (a package move plus a renderer and tooltip refactor); the integration was ported onto the new APIs.
 - With an older Factory Controller (e.g. 1.2.0) installed, the integration now detects this and disables itself cleanly — wires stay vanilla, nothing crashes. Update Factory Controller to 1.2.1+ to get GUI wire dyeing back.
 - World-side dyeing, goggles tracing and path dyeing are unaffected — this change only concerns the optional Factory Controller compatibility.
+- Special thanks to [flamemaster396](https://www.curseforge.com/members/flamemaster396/projects) for suggesting the Factory Controller integration in the first place!
 
 ## 0.4.0
 
