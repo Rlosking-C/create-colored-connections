@@ -28,6 +28,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -154,7 +155,11 @@ public abstract class ConnectionWidgetMixin {
 	 * <p>Since FC 1.2.1 the tooltip is a list of already-formatted
 	 * {@link FormattedCharSequence} lines (the overlapping-count rework), so
 	 * the dye line is flattened the same way — {@code getVisualOrderText()}
-	 * keeps the per-dye color of the styled name.</p>
+	 * keeps the per-dye color of the styled name. That list is also
+	 * immutable ({@code List.copyOf}), so the extended list is built as a
+	 * copy and swapped in via {@code setReturnValue} instead of mutating the
+	 * original — a plain {@code add} would throw
+	 * UnsupportedOperationException.</p>
 	 *
 	 * <p>Black needs no special case: GUI black dyeing clears the color
 	 * (dye field 0, no line at all), and world-side black is never stored,
@@ -163,7 +168,7 @@ public abstract class ConnectionWidgetMixin {
 	 * {@link VirtualConnectionDye}, so their tooltips stay untouched,
 	 * mirroring the dyeing rule itself.</p>
 	 */
-	@Inject(method = "getTooltip", at = @At("RETURN"))
+	@Inject(method = "getTooltip", at = @At("RETURN"), cancellable = true)
 	private void createcc$dyeTooltipLine(ComponentHolder holder, int count, int index, boolean locked,
 			CallbackInfoReturnable<List<FormattedCharSequence>> cir) {
 		if (!(connection instanceof VirtualConnectionDye dyeable) || dyeable.createcc$getDye() == 0)
@@ -174,7 +179,9 @@ public abstract class ConnectionWidgetMixin {
 		DyeColor dye = DyeColor.byId(dyeable.createcc$getDye() - 1);
 		Component dyeName = Component.translatable("item.minecraft." + dye.getName() + "_dye")
 				.withStyle(Style.EMPTY.withColor(dye.getTextColor()));
-		lines.add(1, Component.translatable("gui.create_colored_connections.wire_dye", dyeName)
+		List<FormattedCharSequence> withDye = new ArrayList<>(lines);
+		withDye.add(1, Component.translatable("gui.create_colored_connections.wire_dye", dyeName)
 				.withStyle(ChatFormatting.GRAY).getVisualOrderText());
+		cir.setReturnValue(withDye);
 	}
 }
