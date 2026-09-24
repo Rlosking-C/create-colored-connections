@@ -57,11 +57,30 @@ public class FCCompatMixinPlugin implements IMixinConfigPlugin {
 		if (createcc$fcSupported == null) {
 			LoadingModList mods = FMLLoader.getLoadingModList();
 			createcc$fcSupported = mods != null && isFactoryControllerSupported(mods);
-			LOGGER.info("[createcc-fc] gate: Factory Controller {} detected -> {} (loadingModList={})",
-				FC_MIN_VERSION, createcc$fcSupported ? "new enough, mixins apply" : "missing or too old, mixins skipped",
+			LOGGER.info("[createcc-fc] gate: Factory Controller {} (minimum {}) -> {} (loadingModList={})",
+				installedVersion(mods), FC_MIN_VERSION,
+				createcc$fcSupported ? "new enough, mixins apply" : "missing or too old, mixins skipped",
 				mods != null);
 		}
 		return createcc$fcSupported;
+	}
+
+	/**
+	 * Installed Factory Controller version, for the gate's log line only: "not
+	 * installed" when the mod is absent, "unknown" when even the mod list is not
+	 * available yet. Without this the line printed the minimum version in the
+	 * position where a detected version would be expected, which read as though
+	 * the mod were present when it was not.
+	 */
+	private static String installedVersion(LoadingModList mods) {
+		if (mods == null)
+			return "unknown";
+		ModFileInfo file = mods.getModFileById("createfactorycontroller");
+		if (file != null)
+			for (IModInfo mod : file.getMods())
+				if ("createfactorycontroller".equals(mod.getModId()))
+					return mod.getVersion().toString();
+		return "not installed";
 	}
 
 	/**

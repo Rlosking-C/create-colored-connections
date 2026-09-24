@@ -78,11 +78,18 @@ dependencies {
     runtimeOnly "maven.modrinth:extra-gauges:2.1.2"
     // Extra Gauges dependency: Create: Deployer API
     runtimeOnly "maven.modrinth:deployer:0.1.2"
-    // Compatibility integration against Create: Factory Controller (optional at runtime,
-    // guarded by a version-gated mixin config — FC >= 1.2.1, keep in sync with
-    // FCCompatMixinPlugin.FC_MIN_VERSION and FactoryControllerCompat.FC_MIN_VERSION).
-    // Requires Create >= 6.0.10 and NeoForge >= 21.1.227 (both satisfied above)
-    implementation "maven.modrinth:create-factory-controller:1.2.1-neoforge-1.21.1"
+    // Factory Controller is an optional integration, never a prerequisite: it is
+    // compiled against only (compileOnly), so the plain client and server runs
+    // behave exactly like the game of a player who does not have it installed —
+    // the case FCCompatMixinPlugin's gate exists for. To test the integration
+    // itself, drop create-factory-controller-1.2.1-neoforge-1.21.1.jar (it is
+    // already in the Gradle cache) into run/mods and start the client again; a
+    // jar in that folder is always discovered, which is how Configured is loaded
+    // here too. Remove it again to go back to the absent case.
+    // Version: keep in sync with FCCompatMixinPlugin.FC_MIN_VERSION and
+    // FactoryControllerCompat.FC_MIN_VERSION. Requires Create >= 6.0.10 and
+    // NeoForge >= 21.1.227 (both satisfied above).
+    compileOnly "maven.modrinth:create-factory-controller:1.2.1-neoforge-1.21.1"
 }
 
 tasks.withType(JavaCompile).configureEach {
