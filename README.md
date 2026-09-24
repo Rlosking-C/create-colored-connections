@@ -45,8 +45,26 @@ Crossed links stay distinguishable where they overlap:
 | Minecraft | 1.21.1 |
 | Loader | NeoForge 21.1.x |
 | Create | 6.0.10 or higher |
+| Create: Factory Controller (optional) | 1.2.1 or higher |
 
 Client **and** server for multiplayer.
+
+### Verified versions
+
+Built and run against these exact versions:
+
+| Component | Version |
+|---|---|
+| Minecraft | 1.21.1 |
+| NeoForge | 21.1.248 |
+| Create | 6.0.10 (build 6.0.10-281) |
+| Create: Factory Controller | 1.2.1, and not installed |
+
+The Factory Controller integration is optional in both directions: without the mod, and on versions below 1.2.1, it disables itself cleanly and nothing else changes.
+
+## Languages
+
+English, Simplified Chinese, Russian, German, French, Japanese, Korean, Brazilian Portuguese and European Spanish. Terminology follows Create's own translations of the same content; corrections and additional languages are welcome.
 
 ## Data & Compatibility
 
@@ -62,6 +80,7 @@ Client **and** server for multiplayer.
 - **0.2** — path dyeing with live green preview, dye/sound feedback, config file, first-placement hint
 - **0.3** — goggles tracing: color-group highlight, factory-scoped graying, overlay readout with link/gauge counts and status breakdown
 - **0.4.1** — Factory Controller compatibility: GUI wire dyeing, tooltip dye readout, blueprint import color carry (requires Factory Controller 1.2.1+; older FC versions disable the integration cleanly)
+- **0.5.0** — Create 6.0.10 baseline, config split into server and client files for in-game config screens, Create-aligned path-dyeing gestures with a live readout and rejection reasons, thinner preview beams that no longer overlap, corners of the dyed border rebuilt so the vanilla line stays intact, and nine languages
 - **Next** — whatever players actually ask for: [open an issue](https://github.com/Rlosking-C/create-colored-connections/issues)
 
 Nothing on this list is a promise; priorities follow player feedback.
