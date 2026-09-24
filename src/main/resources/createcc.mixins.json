@@ -8,7 +8,8 @@
   ],
   "client": [
     "client.FactoryPanelRendererMixin",
-    "client.GoggleOverlayRendererMixin"
+    "client.GoggleOverlayRendererMixin",
+    "client.ValueSettingsClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

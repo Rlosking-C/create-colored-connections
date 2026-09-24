@@ -52,9 +52,12 @@ public class ColoredConnections {
 		// Payload registration is a mod-bus event: attach explicitly to avoid
 		// the bus ambiguity of @EventBusSubscriber
 		modBus.addListener(com.rlosking.createcc.network.ColoredConnectionNetwork::register);
-		// COMMON config: one shared toml, each side reads only the options it
-		// owns (gameplay/feedback on the server, rendering on the client)
-		container.registerConfig(ModConfig.Type.COMMON, CreateCCConfig.SPEC);
+		// Two standard NeoForge configs, both of which in-game config editors
+		// such as Configured pick up automatically:
+		//   COMMON — server-owned gameplay / feedback flags
+		//   CLIENT — this player's own rendering / tracing options
+		container.registerConfig(ModConfig.Type.COMMON, CreateCCConfig.COMMON_SPEC);
+		container.registerConfig(ModConfig.Type.CLIENT, CreateCCConfig.CLIENT_SPEC);
 	}
 
 	/**
