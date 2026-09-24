@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## Unreleased
+## 0.5.0
 
 - Built against Create 6.0.10 — the current public release — instead of the 6.0.11 development build. Create's 6.0.10 metadata publishes its own libraries as runtime-only, so the addon now declares Ponder, Registrate and Flywheel explicitly (versions matching what the released jar bundles). Create 6.0.10 is now the minimum supported version.
 - The config is split into two standard NeoForge files so in-game config editors such as Configured pick both up automatically:
