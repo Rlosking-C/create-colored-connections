@@ -18,7 +18,7 @@ The same network, once vanilla and once color-coded:
 
 - **Right-click a link with any dye** to color it. Lines are drawn on the wall between gauges — point at the line itself, not the gauge panel. By default the dye is never consumed — not even in survival mode — so recolor as often as you like (a config option can make dyeing cost one dye per action).
 - **Black dye = reset.** Restores the vanilla status color.
-- **Path dyeing.** Shift+right-click a gauge to start a path, then simply sweep your crosshair over further gauges: each one joins the chain, connected to the previous gauge along its own shortest route — the sweep decides the branch, so the dyed path is exactly the route you traced. While building, every pending link carries a floating green beam. Hover the last gauge again to undo it, right-click the last gauge to dye the whole chain in one action, right-click anywhere else to cancel.
+- **Path dyeing.** Shift+right-click a gauge to start a path, then simply sweep your crosshair over further gauges: each one joins the chain, connected to the previous gauge along its own shortest route — the sweep decides the branch, so the dyed path is exactly the route you traced. While building, every pending link carries a floating green beam, the gauge a click would confirm is boxed by a blinking outline, and the action bar keeps showing the chain's link and gauge counts together with the dye in hand. Hover the last gauge again to undo it, right-click the last gauge to dye the whole chain in one action, right-click the start gauge — or anywhere that is not a gauge, including thin air — to cancel, and Shift+right-click to cancel from anywhere. A gauge that cannot join the chain says why (already in the path, no connection) instead of silently doing nothing.
 - **Tactile feedback.** A successful dyeing plays the same sound Create uses when two gauges link, plus a small puff of dust in the applied dye's color.
 - **Smart inheritance.** A newly created link inherits the source gauge's incoming color — but only when all incoming links share exactly one color. Mixed or uncolored inputs stay vanilla.
 - **Status colors stay intact.** Idle lines are fully dyed; active lines (in progress / satisfied / failed / flashing) keep their vanilla status-colored core and gain a thin 1px dye border on each side. Animations like the scrolling texture and restock flashing are untouched.
@@ -44,7 +44,7 @@ Crossed links stay distinguishable where they overlap:
 |---|---|
 | Minecraft | 1.21.1 |
 | Loader | NeoForge 21.1.x |
-| Create | 6.0.0 or higher |
+| Create | 6.0.10 or higher |
 
 Client **and** server for multiplayer.
 
@@ -52,7 +52,9 @@ Client **and** server for multiplayer.
 
 - Colors are stored per dimension in the world save and survive panel relocation and world reload.
 - Colors sync to players on login, dimension change, and chunk load — nothing to configure.
-- A small config file (`config/create_colored_connections-common.toml`) covers the optional extras: dye consumption (off by default — one dye per action, not per link), the one-time first-gauge hint, the dye feedback effects, the hover lift, and goggles tracing (on by default, with its reach distance and overlay readout as separate options).
+- The optional extras live in two config files, both of which in-game config screens (e.g. Configured) pick up on their own.
+  `config/create_colored_connections-common.toml` holds the server-side flags: dye consumption (off by default — one dye per action, not per link), the one-time first-gauge hint, the dye feedback effects, and Factory Controller dyeing.
+  `config/create_colored_connections-client.toml` holds this player's own rendering and tracing options: the hover lift, and goggles tracing with its reach distance and overlay readout.
 
 ## Roadmap
 

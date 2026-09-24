@@ -16,12 +16,14 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -49,6 +51,16 @@ import org.slf4j.Logger;
  * broadcasts back in its sync packet (a failed server validation leaves no
  * local residue).</p>
  *
+ * <p>Every takeover of the gesture cancels the vanilla interaction but
+ * reports {@link InteractionResult#SUCCESS} as the cancellation result.
+ * Cancelling alone would leave the click looking dead — the client plays the
+ * vanilla "use item" feedback (arm swing, item-use animation) only for a
+ * result that consumes the action. Reporting SUCCESS keeps the gesture
+ * authored by the vanilla pipeline, exactly like Create's own custom
+ * right-click handlers do ({@code EdgeInteractionHandler}, {@code LinkHandler}).
+ * Cancellation and result are set on both sides so the client and the server
+ * agree on what the click was.</p>
+ *
  * <p>Black dye semantics = restore the vanilla status color
  * (represented as dyeOrdinal = -1, i.e. clear, in the protocol).</p>
  *
@@ -70,23 +82,21 @@ public class DyeInteractionHandler {
 
 	@SubscribeEvent
 	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-		ItemStack stack = event.getItemStack();
-		if (!(stack.getItem() instanceof DyeItem dyeItem))
-			return;
-		if (event.getHitVec() == null)
-			return;
-
 		boolean clientSide = event.getLevel().isClientSide();
 
-		// While a chain is pending, every plain right-click resolves it:
-		// on the tail gauge it confirms the batch, anywhere else — another
-		// gauge, a link line, a wall, the floor — it cancels. This branch
-		// runs before the single-link dyeing below so a pending batch can
-		// never be confused with a one-line touch-up, and it cancels the
-		// vanilla interaction on BOTH sides: the client's cancellation never
-		// reaches the server, which would otherwise open the gauge's config
-		// screen underneath the very click that confirmed the batch.
-		if (!event.getEntity().isShiftKeyDown()) {
+		// While a chain is pending, EVERY right-click belongs to the chain —
+		// whatever is held, and whichever hand holds the dye. Gating this on
+		// the interacting hand's dye (as the single-link dyeing below does)
+		// let the confirm click slip through to vanilla whenever the dye sat
+		// in the offhand: the chain stayed pending, but the click still opened
+		// the gauge's config screen on top of the confirmation.
+		//
+		// The branch also runs before the single-link dyeing below so a pending
+		// batch can never be confused with a one-line touch-up, and it cancels
+		// the vanilla interaction on BOTH sides: the client's cancellation
+		// never reaches the server, which would otherwise open that screen
+		// underneath the very click that confirmed the batch.
+		{
 			// Pending state lives in the client selection on the client side
 			// and in the packet-synced mirror on the server side; the ternary
 			// short-circuits, so the client-only class is never touched when
@@ -94,28 +104,38 @@ public class DyeInteractionHandler {
 			boolean pending = clientSide ? BatchDyeSelection.hasSelection()
 				: event.getEntity() instanceof ServerPlayer serverPlayer
 					&& BatchSelectionModePacket.isPending(serverPlayer);
-			if (pending) {
+			if (pending && event.getHitVec() != null) {
 				FactoryPanelBehaviour clicked = clickedPanel(event);
 				event.setCanceled(true);
+				event.setCancellationResult(InteractionResult.SUCCESS);
 				if (clientSide)
-					resolvePendingClick(event.getEntity(), clicked, dyeItem);
+					resolvePendingClick(event.getEntity(), clicked, heldDye(event.getEntity()),
+						event.getEntity().isShiftKeyDown());
 				return;
 			}
 		}
 
-		// Shift+right-click: path dyeing takes priority over single-link
-		// dyeing. Gauge walls are crowded with lines, so while aiming at a
-		// gauge the crosshair usually sits on a line as well — without this
-		// priority the first shift-click would silently dye that one line
-		// and path mode could never even start.
+		ItemStack stack = event.getItemStack();
+		if (!(stack.getItem() instanceof DyeItem dyeItem))
+			return;
+		if (event.getHitVec() == null)
+			return;
+
+		// Shift+right-click with no chain pending starts path dyeing: it takes
+		// priority over single-link dyeing because gauge walls are crowded
+		// with lines, so while aiming at a gauge the crosshair usually sits on
+		// a line as well — without this priority the first shift-click would
+		// silently dye that one line and path mode could never even start.
 		if (event.getEntity().isShiftKeyDown()) {
 			FactoryPanelBehaviour clicked = clickedPanel(event);
 			if (clicked != null) {
 				// Cancel the vanilla interaction (panel screen, sneak-placing
-				// against the panel) so the gesture belongs to path mode
+				// against the panel) so the gesture belongs to path mode; the
+				// SUCCESS result keeps the vanilla use feedback (arm swing)
 				event.setCanceled(true);
+				event.setCancellationResult(InteractionResult.SUCCESS);
 				if (clientSide)
-					handlePathClick(event.getEntity(), event.getLevel(), clicked);
+					startPath(event.getEntity(), event.getLevel(), clicked);
 			}
 			// Any other block (or an empty gauge quadrant): leave the
 			// interaction to vanilla, so sneak-placing keeps working
@@ -149,8 +169,11 @@ public class DyeInteractionHandler {
 		if (hit == null)
 			return;
 
-		// Hit a connection: cancel the vanilla interaction (panel screen, block placement, etc.)
+		// Hit a connection: cancel the vanilla interaction (panel screen, block
+		// placement, etc.) and report SUCCESS, so the client still plays the
+		// vanilla use feedback (arm swing, item-use animation)
 		event.setCanceled(true);
+		event.setCancellationResult(InteractionResult.SUCCESS);
 		if (!clientSide)
 			return;
 
@@ -165,61 +188,81 @@ public class DyeInteractionHandler {
 	}
 
 	/**
-	 * The active gauge panel the click landed on, or null when the clicked
-	 * block is not a gauge block — or its targeted quadrant holds no active
-	 * panel: an empty quadrant is not a gauge, and a line may still cross it,
-	 * so line picking stays enabled there.
+	 * The active gauge panel at a click position, or null when the block is
+	 * not a gauge block — or its targeted quadrant holds no active panel: an
+	 * empty quadrant is not a gauge, and a line may still cross it, so line
+	 * picking stays enabled there.
 	 */
-	private static FactoryPanelBehaviour clickedPanel(PlayerInteractEvent.RightClickBlock event) {
-		BlockPos pos = event.getPos();
-		BlockState state = event.getLevel().getBlockState(pos);
+	static FactoryPanelBehaviour panelAt(Level level, BlockPos pos, Vec3 hitLocation) {
+		BlockState state = level.getBlockState(pos);
 		if (!(state.getBlock() instanceof FactoryPanelBlock))
 			return null;
 		// Which of the block's four panel slots the crosshair is on
 		FactoryPanelPosition slot = new FactoryPanelPosition(pos,
-			FactoryPanelBlock.getTargetedSlot(pos, state, event.getHitVec().getLocation()));
-		FactoryPanelBehaviour behaviour = FactoryPanelBehaviour.at(event.getLevel(), slot);
+			FactoryPanelBlock.getTargetedSlot(pos, state, hitLocation));
+		FactoryPanelBehaviour behaviour = FactoryPanelBehaviour.at(level, slot);
 		return behaviour != null && behaviour.isActive() ? behaviour : null;
 	}
 
-	/**
-	 * Path-dyeing chain building (client only): the first shift+right-click
-	 * on a gauge starts the chain, further ones mirror a hover step — a new
-	 * gauge is appended, the current tail is dropped again (undo). The chain
-	 * itself is grown by the tick sampler as the crosshair sweeps over
-	 * gauges (see {@link BatchDyeSelection#step}); the click is the reliable
-	 * fallback for a gauge the sweep skipped.
-	 */
-	private static void handlePathClick(Player player, Level level, FactoryPanelBehaviour clicked) {
-		FactoryPanelPosition slot = clicked.getPanelPosition();
-
-		if (!BatchDyeSelection.hasSelection()) {
-			BatchDyeSelection.select(level, slot);
-			player.displayClientMessage(Component.translatable("message.create_colored_connections.path_start")
-				.withStyle(ChatFormatting.GREEN), true);
-			return;
-		}
-		// Clicking the lone start gauge again cancels (nothing is chained
-		// yet); with a longer chain the click is just another sweep step
-		if (BatchDyeSelection.size() == 1 && slot.equals(BatchDyeSelection.tail())) {
-			BatchDyeSelection.clear();
-			player.displayClientMessage(Component.translatable("message.create_colored_connections.path_cancel"), true);
-			return;
-		}
-		BatchDyeSelection.step(level, slot);
+	/** The panel the block-interaction event landed on; see {@link #panelAt}. */
+	private static FactoryPanelBehaviour clickedPanel(PlayerInteractEvent.RightClickBlock event) {
+		return panelAt(event.getLevel(), event.getPos(), event.getHitVec().getLocation());
 	}
 
 	/**
-	 * Resolves a pending chain (client only): a plain right-click on the
-	 * chain's tail gauge sends the batch request, anything else — blank
-	 * space, a wall, a link line, another gauge — cancels the selection.
-	 * A lone start node has nothing to dye, so confirming "it" is also just
-	 * a cancel.
+	 * Starts a path-dyeing chain on the clicked gauge (client only). The chain
+	 * is then grown by the tick sampler as the crosshair sweeps over further
+	 * gauges ({@link BatchDyeSelection#step}), or explicitly by clicking them —
+	 * a missed sweep is always fixable with a click (see
+	 * {@link #resolvePendingClick}).
 	 */
-	private static void resolvePendingClick(Player player, FactoryPanelBehaviour clicked, DyeItem dyeItem) {
-		FactoryPanelPosition slot = clicked == null ? null : clicked.getPanelPosition();
+	private static void startPath(Player player, Level level, FactoryPanelBehaviour clicked) {
+		if (BatchDyeSelection.hasSelection())
+			return;
+		BatchDyeSelection.select(level, clicked.getPanelPosition());
+		player.displayClientMessage(Component.translatable("message.create_colored_connections.path_start")
+			.withStyle(ChatFormatting.GREEN), true);
+	}
 
-		if (slot != null && BatchDyeSelection.size() >= 2 && slot.equals(BatchDyeSelection.tail())) {
+	/**
+	 * Resolves a chain-building right-click (client only), with the semantics
+	 * of Create's connection flow: {@code aborts} (shift held) always cancels,
+	 * a click that landed on no gauge cancels, a click on the start gauge
+	 * cancels, a click on the tail confirms the batch, and a click on any
+	 * other gauge appends it to the chain. Appending reports failures — a
+	 * gauge that cannot join explains why instead of doing nothing.
+	 *
+	 * <p>Called from {@link PathDyeInputHandler}, which owns the use key while
+	 * a chain is pending, and from the block-interaction fallback below.</p>
+	 */
+	static void resolvePendingClick(Player player, FactoryPanelBehaviour clicked, DyeItem dyeItem, boolean aborts) {
+		if (aborts || clicked == null) {
+			LOGGER.info("createcc path click -> cancel ({})", aborts ? "shift held" : "no gauge under crosshair");
+			cancelPath(player);
+			return;
+		}
+		// Nothing to apply: the chain is dropped with the reason spelled out
+		// (the tick handler would end it a moment later, without the context
+		// of the click that was meant to confirm it)
+		if (dyeItem == null) {
+			LOGGER.info("createcc path click -> cancel (no dye in either hand)");
+			BatchDyeSelection.clear();
+			player.displayClientMessage(Component.translatable(
+				"message.create_colored_connections.path_no_dye"), true);
+			return;
+		}
+		FactoryPanelPosition slot = clicked.getPanelPosition();
+
+		// Clicking the chain's start again drops the whole chain — Create's
+		// "click the source panel to clear it". With a single-gauge chain the
+		// start IS the tail, so this also covers confirming nothing.
+		if (slot.equals(BatchDyeSelection.start())) {
+			LOGGER.info("createcc path click -> cancel (clicked the start gauge {})", slot.pos());
+			cancelPath(player);
+			return;
+		}
+
+		if (BatchDyeSelection.size() >= 2 && slot.equals(BatchDyeSelection.tail())) {
 			List<FactoryPanelPosition> nodes = BatchDyeSelection.nodes();
 			DyeColor dye = dyeItem.getDyeColor();
 			boolean clear = dye == DyeColor.BLACK;
@@ -228,13 +271,36 @@ public class DyeInteractionHandler {
 			// packet itself goes out right here
 			BatchDyeSelection.clear();
 			PacketDistributor.sendToServer(new BatchColorConnectionPacket(nodes, clear ? -1 : dye.ordinal()));
+			LOGGER.info("createcc path click -> confirm {} gauges as {}", nodes.size(), dye);
 			player.displayClientMessage(Component.translatable(clear
 				? "message.create_colored_connections.path_cleared"
 				: "message.create_colored_connections.path_dyed")
 				.withStyle(ChatFormatting.GREEN), true);
 			return;
 		}
+
+		// Any other gauge: the same step the sweep sampler performs, but with
+		// reporting on, so a gauge that cannot join says why
+		LOGGER.info("createcc path click -> append {}", slot.pos());
+		BatchDyeSelection.step(player.level(), slot, true);
+	}
+
+	private static void cancelPath(Player player) {
 		BatchDyeSelection.clear();
 		player.displayClientMessage(Component.translatable("message.create_colored_connections.path_cancel"), true);
+	}
+
+	/**
+	 * The dye a confirmation would apply: the main hand's, or the offhand's
+	 * when the main hand holds something else — the same pair
+	 * {@code BatchDyeSelection} accepts for keeping a chain alive. Null when
+	 * neither hand holds a dye.
+	 */
+	static DyeItem heldDye(Player player) {
+		if (player.getMainHandItem().getItem() instanceof DyeItem main)
+			return main;
+		if (player.getOffhandItem().getItem() instanceof DyeItem off)
+			return off;
+		return null;
 	}
 }

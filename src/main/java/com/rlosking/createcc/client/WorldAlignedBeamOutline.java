@@ -29,9 +29,10 @@ import org.joml.Vector4f;
  * preview glow with identical intensity.</p>
  *
  * <p>Because all faces share one normal, one color and one full-bright
- * lightmap, the deliberate overlaps between neighbouring beams (the corner
- * fills where two runs meet) shade to identical pixels, so no seams or
- * z-fighting become visible where the cuboids intersect.</p>
+ * lightmap, cuboids that meet edge to edge shade to identical pixels — the
+ * preview relies on that: its pieces touch but never overlap (see
+ * {@code BatchPreviewRenderer}), so there is nothing left to double-blend or
+ * z-fight at a joint or a crossing.</p>
  */
 public final class WorldAlignedBeamOutline extends Outline {
 

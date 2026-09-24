@@ -54,11 +54,25 @@ import net.minecraft.world.level.block.state.BlockState;
  * 2px shaft with 4px barbs whose vanilla widths differ, so no single scale
  * fits both — instead two same-colored underlays are rendered: the line
  * model at 2× covering the full segment (shaft gets 1px per side, matching
- * the body) plus the arrow model at 1.5× (barbs 6px, 1px per side). The
- * underlay sinks only 0.0625/512 instead of 1/512: vanilla separates
- * crossing lines with a 0.125/512 axis offset (east-west segments always sit
- * above north-south ones), and sinking too deep would let a crossing line's
- * core punch through the border and break that layering.</p>
+ * the body) plus the arrow model at 1.5× (barbs 6px, 1px per side).</p>
+ *
+ * <p><b>Corners</b>: a border segment is never shortened — each one is drawn
+ * across its whole path step at the texture's original 1:1 sampling, so the
+ * border's shade pattern is exactly as dense as the vanilla line's, in the
+ * corners as well as along the straight runs. Corners need no patched-in
+ * geometry because of where the underlay sits. Vanilla separates
+ * perpendicular lines with a 0.125/512 axis offset, so a segment's core
+ * always lies either 0.125 above or 0.125 below that of a perpendicular
+ * arm; the underlay sinks 0.1875/512 — that offset plus the 0.0625 it takes
+ * to hide under its own core — and therefore ends up below *both* cores at a
+ * joint. The vanilla line keeps its full L, the border simply passes under
+ * it, and the two bands alone fill the quadrant the cores leave open; the
+ * quadrant diagonally outside the elbow stays empty. 0.1875/512 blocks is
+ * invisible displacement, it only orders occlusion, and it is shallow enough
+ * never to hide a crossing link's core either. Earlier revisions cropped the
+ * band ends at a joint and closed the gap with small patches instead; those
+ * patches sampled the line texture squeezed into a quarter of its length,
+ * which read as a far denser pattern than the line itself.</p>
  *
  * <p>Link lines (redstone / display) carry status semantics in their color,
  * are never dyed, and are left entirely to vanilla.</p>
@@ -142,14 +156,14 @@ public abstract class FactoryPanelRendererMixin {
 			yOffset += (connection.success ? 1 : 2) * p;
 		}
 		// Idle full-line sits on the same layer as the vanilla gray line (the
-		// vanilla render is cancelled, no raise needed); the active-state
-		// underlay sinks by only 0.0625: deep enough to hide under its own
-		// core (leaving 1px borders on both sides), yet shallow enough to stay
-		// above the core of a same-state line on the crossing axis (vanilla's
-		// axis offset is just 0.125) — otherwise a crossing vertical line's
-		// core would punch through the horizontal line's dye border and the
-		// layering would look inconsistent
-		yOffset += idle ? 0 : -0.0625f;
+		// vanilla render is cancelled, no raise needed). The active-state
+		// underlay sinks by 0.1875: vanilla's 0.125 axis offset between
+		// perpendicular lines, plus the 0.0625 it takes to hide under its own
+		// core. Sinking past the axis offset is what keeps the band off the
+		// other arm's core at a corner — the vanilla line keeps its full L and
+		// the border passes underneath it — so no segment has to be cropped,
+		// and every border segment samples the line texture at 1:1
+		yOffset += idle ? 0 : -0.1875f;
 
 		int dyeColor = 0xFF000000 | dye.getTextureDiffuseColor();
 		boolean scroll = !behaviour.isMissingAddress() && !behaviour.waitingForNetwork
@@ -174,8 +188,16 @@ public abstract class FactoryPanelRendererMixin {
 			boolean alongX = modelDir.getAxis() == Direction.Axis.X;
 			// Vanilla axis offset: east-west segments sit 0.125/512 above
 			// north-south ones — crossings always resolve as "horizontal
-			// above, vertical below"
+			// above, vertical below", and the sink leans on that same step to
+			// keep a band below both cores at a corner
 			float yLayer = yOffset + (direction.get2DDataValue() % 2) * 0.125f + hoverLift;
+
+			// Border width: the 2px texture core at 2× = 4px, i.e. 1px peeking
+			// out on each side of the vanilla line. Idle draws the dye line
+			// itself, so it keeps the line's original width. Every segment is
+			// drawn across its whole path step — nothing is cropped anywhere —
+			// so the border samples the line texture at its original density
+			float band = idle ? 1 : 2;
 
 			if (i == 0 && !idle) {
 				// Arrow segment, dual underlay: shaft (2px) and barbs (4px)
@@ -186,18 +208,21 @@ public abstract class FactoryPanelRendererMixin {
 				// B. arrow model at 1.5×: barbs 4px→6px, 1px per side
 				//    (2× would peek 2px)
 				// Two same-color layers stacked: the shaft takes A's 4px, the
-				// barbs take B's 6px — exactly 1px of border everywhere
-				createcc$underlay(AllPartialModels.FACTORY_PANEL_LINES.get(modelDir), blockState, alongX, 2, 1,
+				// barbs take B's 6px — exactly 1px of border everywhere.
+				// This step runs along the panel's facing (it moves nowhere in
+				// the line plane), so it never meets a corner.
+				createcc$underlay(AllPartialModels.FACTORY_PANEL_LINES.get(modelDir), blockState, alongX, 2,
 					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
-				createcc$underlay(AllPartialModels.FACTORY_PANEL_ARROWS.get(modelDir), blockState, alongX, 1.5f, 1,
+				createcc$underlay(AllPartialModels.FACTORY_PANEL_ARROWS.get(modelDir), blockState, alongX, 1.5f,
 					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 			} else {
 				// Straight segment at 2× width (2px→4px, 1px peeking per side);
 				// the idle full-line keeps its original width
 				PartialModel partial = (i == 0 ? AllPartialModels.FACTORY_PANEL_ARROWS
 					: AllPartialModels.FACTORY_PANEL_LINES).get(modelDir);
-				createcc$underlay(partial, blockState, alongX, idle ? 1 : 2, 1,
-					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
+				createcc$underlay(partial, blockState, alongX, band,
+					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms,
+					buffer, light, overlay);
 			}
 		}
 
@@ -209,23 +234,23 @@ public abstract class FactoryPanelRendererMixin {
 
 	/**
 	 * Renders one dye underlay: builds the same transform chain as vanilla,
-	 * scales along the width axis (and optionally the length axis), colors
-	 * and outputs it.
+	 * widens the model across the line, colors and outputs it. Nothing is
+	 * scaled along the length: a border segment is always its whole path step,
+	 * which is what keeps its texture pattern as dense as the vanilla line's
+	 * ({@code SuperByteBuffer.scale} moves vertices only, it cannot re-sample
+	 * the texture, so any length scaling would squeeze the pattern instead of
+	 * cropping it cleanly).
 	 *
-	 * @param alongX      whether the model's length axis is X (the width
-	 *                    scale is applied to the other axis)
-	 * @param widthScale  width-axis scale (2 = 1px border per side; 1 = original width)
-	 * @param lengthScale length-axis scale (1 = no crop; see SuperByteBuffer's
-	 *                    scale-then-translate composition: the quad locally
-	 *                    covers [-0.5, 0] along the length axis, extending
-	 *                    from the anchor toward the segment start, so scaling
-	 *                    crops from the segment-start end)
-	 * @param traceGray   goggles-tracing dim strength (0..1) for this link;
-	 *                    the dye color mixes toward {@link #TRACE_GRAY} so a
-	 *                    dimmed link's border fades with its vanilla core
+	 * @param alongX     whether the model's length axis is X (the width scale
+	 *                   is applied to the other axis)
+	 * @param widthScale width-axis scale (2 = 1px border per side; 1 = the
+	 *                   line's original width)
+	 * @param traceGray  goggles-tracing dim strength (0..1) for this link;
+	 *                   the dye color mixes toward {@link #TRACE_GRAY} so a
+	 *                   dimmed link's border fades with its vanilla core
 	 */
 	private static void createcc$underlay(PartialModel partial, BlockState blockState, boolean alongX,
-		float widthScale, float lengthScale, float xRot, float yRot, float anchorX, float anchorZ, float x, float z,
+		float widthScale, float xRot, float yRot, float anchorX, float anchorZ, float x, float z,
 		float yLayer, boolean scroll, int dyeColor, float traceGray, PoseStack ms, MultiBufferSource buffer,
 		int light, int overlay) {
 		SuperByteBuffer sprite = CachedBuffers.partial(partial, blockState)
@@ -234,11 +259,11 @@ public abstract class FactoryPanelRendererMixin {
 			.rotateCentered(Mth.PI, Direction.UP)
 			.translate(anchorX, 0, anchorZ)
 			.translate(x, yLayer / 512f, z);
-		if (widthScale != 1 || lengthScale != 1) {
+		if (widthScale != 1) {
 			if (alongX)
-				sprite.scale(lengthScale, 1, widthScale);
+				sprite.scale(1, 1, widthScale);
 			else
-				sprite.scale(widthScale, 1, lengthScale);
+				sprite.scale(widthScale, 1, 1);
 		}
 		// Same scrolling-texture condition as vanilla (washboard animation);
 		// the dye color scrolls along

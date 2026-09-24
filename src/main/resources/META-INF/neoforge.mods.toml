@@ -31,7 +31,7 @@ crossed networks stay readable at a glance.
 [[dependencies.create_colored_connections]]
     modId = "create"
     type = "required"
-    versionRange = "[6.0.0,)"
+    versionRange = "[6.0.10,)"
     ordering = "AFTER"
     side = "BOTH"
 

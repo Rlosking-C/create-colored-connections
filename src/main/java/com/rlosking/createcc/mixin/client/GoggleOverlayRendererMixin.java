@@ -5,7 +5,6 @@ import java.util.List;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.rlosking.createcc.CreateCCConfig;
@@ -13,10 +12,7 @@ import com.rlosking.createcc.client.GogglesTracing;
 
 import com.simibubi.create.content.equipment.goggles.GoggleOverlayRenderer;
 
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
 
 /**
  * Goggles tracing HUD (author decision): no custom HUD box — the trace
@@ -25,60 +21,57 @@ import net.minecraft.network.chat.FormattedText;
  * position (the user's overlayOffset config), styling, item icon and its
  * slide/fade-in animation for free, and never overlaps or competes with it.
  *
- * <p>Two injections work together:</p>
+ * <p><b>Where the lines are appended matters.</b> {@code renderOverlay}
+ * measures the tooltip first (max line width, then the panel height) and only
+ * then derives its anchor from that measurement:</p>
  *
- * <p><b>1. {@code isEmpty} guard (ModifyExpressionValue):</b> vanilla aborts
- * the overlay when the looked-at block contributed no tooltip lines — and
- * while tracing, the player most often looks at plain wall blocks that have
- * no goggle information at all. While a trace is active the empty check is
- * forced to "not empty" so the overlay renders with our lines alone. When the
- * trace ends the check returns to vanilla behavior (empty → overlay
- * disappears instantly, same as vanilla).</p>
+ * <pre>posX = min(width / 2 + overlayOffsetX, width - tooltipTextWidth - 20)</pre>
  *
- * <p><b>2. {@code drawHoveringText} wrap (WrapOperation):</b> right before
- * Create draws the tooltip, the trace lines are appended to the tooltip
- * list. There are two call sites (the plain path and the ModernUI compat
- * path) — they are mutually exclusive per frame, so the wrap handler runs at
- * most once per frame. The list itself is the ArrayList built by
- * {@code renderOverlay}; appending is safe. Width computation happens inside
- * drawHoveringText, so the widened box fits the new lines automatically.</p>
+ * <p>Appending at the draw call, as an earlier revision did, left that
+ * measurement blind to the trace lines. Create's clamp then produced an
+ * anchor that was fine for its own lines only, {@code RemovedGuiUtils}
+ * found the real tooltip wider than the space left of the screen edge, and
+ * flipped the whole panel to the <i>left</i> of the anchor
+ * ({@code tooltipX = posX - 16 - tooltipTextWidth}) — while the item icon
+ * stayed where it was drawn, at {@code posX + 10}, on the right. Russian and
+ * German, the widest of the shipped languages, crossed that limit first and
+ * showed a readout detached from its icon; English and Chinese sat just
+ * inside it. When even the flipped panel did not fit, vanilla degraded
+ * further and wrapped mid-sentence with the continuation flush against the
+ * panel's left edge, which is what the wrapped German summary line was.</p>
+ *
+ * <p>So the lines are appended at the last {@code isEmpty()} guard instead:
+ * after every branch that can still add to, drop from or clear the tooltip
+ * list has run (including the {@code remove(size() - 1)} that pairs a goggle
+ * block's own lines with its hover lines), and before Create measures
+ * anything. Width, height, the anchor clamp, the icon position and the
+ * fade-in then all see the same list, and the panel can no longer flip away
+ * from its icon. The same guard is the "nothing to show" check, which is
+ * also why a trace keeps the overlay alive over plain blocks that contribute
+ * no goggle information at all: while tracing, the guard reports non-empty.</p>
  */
 @Mixin(GoggleOverlayRenderer.class)
 public class GoggleOverlayRendererMixin {
 
 	/**
 	 * The third {@code List.isEmpty()} call inside renderOverlay is the final
-	 * "nothing to show" guard before drawing (after the goggle-info and
-	 * pole-length branches). While a trace is active, force it to "not empty"
-	 * so the overlay stays alive even over blocks without goggle information.
-	 */
-	@ModifyExpressionValue(method = "renderOverlay",
-		at = @At(value = "INVOKE", target = "Ljava/util/List;isEmpty()Z", ordinal = 2))
-	private static boolean createcc$keepOverlayAliveForTrace(boolean original) {
-		if (original && CreateCCConfig.TRACE_HUD.get() && GogglesTracing.shouldShowTooltip())
-			return false;
-		return original;
-	}
-
-	/**
-	 * Appends the trace summary / status lines to the overlay tooltip right
-	 * before Create renders it.
+	 * "nothing to show" guard before drawing, and the last point at which the
+	 * tooltip list can still be extended safely: the goggle-info and
+	 * pole-length branches are behind us, and the width/height measurement,
+	 * the anchor clamp and the item icon are all ahead. Appending here both
+	 * keeps the overlay alive while a trace is active (the guard is forced to
+	 * "not empty") and lets Create size and place the panel around the trace
+	 * lines instead of discovering them at the draw call.
 	 */
 	@WrapOperation(method = "renderOverlay",
-		at = @At(value = "INVOKE",
-			target = "Lcom/simibubi/create/foundation/gui/RemovedGuiUtils;drawHoveringText(Lnet/minecraft/client/gui/GuiGraphics;Ljava/util/List;IIIIIIIILnet/minecraft/client/gui/Font;)V"))
-	private static void createcc$appendTraceToGoggleOverlay(GuiGraphics guiGraphics,
-		List<? extends FormattedText> lines, int mouseX, int mouseY, int screenWidth, int screenHeight,
-		int maxWidth, int bgColor, int borderColorStart, int borderColorEnd, Font font,
-		Operation<Void> original) {
-		if (CreateCCConfig.TRACE_HUD.get() && GogglesTracing.shouldShowTooltip()) {
-			// renderOverlay always builds the tooltip as a fresh ArrayList —
-			// appending in place is safe and keeps Create's own lines first
-			@SuppressWarnings("unchecked")
-			List<Component> mutable = (List<Component>) lines;
-			GogglesTracing.appendTooltip(mutable);
-		}
-		original.call(guiGraphics, lines, mouseX, mouseY, screenWidth, screenHeight, maxWidth, bgColor,
-			borderColorStart, borderColorEnd, font);
+		at = @At(value = "INVOKE", target = "Ljava/util/List;isEmpty()Z", ordinal = 2))
+	private static boolean createcc$appendTraceLinesBeforeMeasure(List<Component> tooltip, Operation<Boolean> original) {
+		boolean empty = original.call(tooltip);
+		if (!CreateCCConfig.TRACE_HUD.get() || !GogglesTracing.shouldShowTooltip())
+			return empty;
+		// renderOverlay always builds the tooltip as a fresh ArrayList —
+		// appending in place is safe and keeps Create's own lines first
+		GogglesTracing.appendTooltip(tooltip);
+		return false;
 	}
 }

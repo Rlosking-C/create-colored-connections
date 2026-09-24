@@ -45,12 +45,35 @@ neoForge {
             systemProperty 'forge.logging.markers', 'REGISTRIES'
         }
         client { client() }
+        // Dedicated server run: verifies the multiplayer side of the mod locally
+        // (config ownership, packet handling, no client-only config reads)
+        server { server() }
     }
 }
 
 dependencies {
-    // Create 6.0.11 (fat jar): its POM transitively resolves Registrate / Ponder / Flywheel
-    implementation "com.simibubi.create:create-${minecraft_version}:${create_version}"
+    // Create 6.0.10 (fat jar, the current public release). Its published metadata also declares
+    // Create's own dev-only integration libraries (JEI, FTB, JourneyMap, Curios, CC:Tweaked,
+    // Architectury, Vanillin, ...) as runtime dependencies — none of them ship inside the
+    // released jar, none are used by this addon, and several are not hosted in the repositories
+    // above, so they are excluded here.
+    implementation("com.simibubi.create:create-${minecraft_version}:${create_version}") {
+        exclude group: 'mezz.jei'
+        exclude group: 'maven.modrinth'
+        exclude group: 'dev.ftb.mods'
+        exclude group: 'info.journeymap'
+        exclude group: 'dev.engine-room.vanillin'
+        exclude group: 'top.theillusivec4.curios'
+        exclude group: 'cc.tweaked'
+        exclude group: 'dev.architectury'
+    }
+    // Libraries Create re-exports. The 6.0.10 release publishes its own dependencies as
+    // runtime-only, so they must be declared here to be visible at compile time
+    // (the 6.0.11 dev builds expose them as compile scope instead). Ponder carries
+    // Catnip (net.createmod.catnip.*), which the client rendering code uses.
+    implementation "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
+    implementation "com.tterrag.registrate:Registrate:${registrate_version}"
+    compileOnly "dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}"
     // Runtime-only: compatibility verification against Create: Extra Gauges (not compiled against)
     runtimeOnly "maven.modrinth:extra-gauges:2.1.2"
     // Extra Gauges dependency: Create: Deployer API
