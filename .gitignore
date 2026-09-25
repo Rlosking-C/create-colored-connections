@@ -32,6 +32,10 @@ known_commits.txt
 /icon.png
 color-palette.png
 
+# Working documents (plan, research, archives, platform copy) - kept on disk,
+# deliberately not published with the mod
+DOC/
+
 # OS
 Thumbs.db
 .DS_Store
