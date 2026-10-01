@@ -39,3 +39,7 @@ DOC/
 # OS
 Thumbs.db
 .DS_Store
+
+# 2026-10-01：与 DOC/ 同类的私有内容 / 设计源文件，绝不进公开仓库
+docs/
+images/_sources/
