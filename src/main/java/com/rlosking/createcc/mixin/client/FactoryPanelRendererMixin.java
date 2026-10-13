@@ -69,6 +69,11 @@ public abstract class FactoryPanelRendererMixin {
 		boolean flashing = !behaviour.redstonePowered && !behaviour.waitingForNetwork && glow > 0
 			&& !behaviour.satisfied;
 
+		boolean idle = behaviour.count == 0 && !behaviour.isMissingAddress()
+			&& !behaviour.redstonePowered && !flashing && !behaviour.waitingForNetwork;
+		boolean extraGauge = behaviour.getClass().getName().startsWith("net.liukrast.eg.");
+		boolean cover = idle && !extraGauge;
+
 		float yOffset = 1;
 		yOffset += behaviour.promisedSatisfied ? 1 : behaviour.satisfied ? 0 : 2;
 		if (!behaviour.redstonePowered && !behaviour.waitingForNetwork && glow > 0 && !behaviour.satisfied
@@ -76,7 +81,7 @@ public abstract class FactoryPanelRendererMixin {
 			float p = (1 - (1 - glow) * (1 - glow));
 			yOffset += (connection.success ? 1 : 2) * p;
 		}
-		yOffset += -0.1875f;
+		yOffset += cover ? 0 : -0.1875f;
 
 		int dyeColor = 0xFF000000 | dye.getTextureDiffuseColor();
 		boolean scroll = !behaviour.isMissingAddress() && !behaviour.waitingForNetwork
@@ -98,9 +103,9 @@ public abstract class FactoryPanelRendererMixin {
 			boolean alongX = modelDir.getAxis() == Direction.Axis.X;
 			float yLayer = yOffset + (direction.get2DDataValue() % 2) * 0.125f + hoverLift;
 
-			float band = 2;
+			float band = cover ? 1 : 2;
 
-			if (i == 0) {
+			if (i == 0 && !cover) {
 				createcc$underlay(AllPartialModels.FACTORY_PANEL_LINES.get(modelDir), blockState, alongX, 2,
 					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 				createcc$underlay(AllPartialModels.FACTORY_PANEL_ARROWS.get(modelDir), blockState, alongX, 1.5f,
@@ -112,6 +117,9 @@ public abstract class FactoryPanelRendererMixin {
 					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms,
 					buffer, light, overlay);
 			}
+		if (cover)
+			ci.cancel();
+
 		}
 
 	}
