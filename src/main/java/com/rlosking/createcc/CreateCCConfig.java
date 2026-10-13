@@ -13,7 +13,6 @@ public class CreateCCConfig {
 
 	public static final ModConfigSpec.BooleanValue FACTORY_CONTROLLER_DYEING;
 
-	public static final ModConfigSpec.BooleanValue FIRST_HINT;
 
 	public static final ModConfigSpec.BooleanValue DYE_EFFECTS;
 
@@ -36,11 +35,6 @@ public class CreateCCConfig {
 		COMMON_BUILDER.pop();
 
 		COMMON_BUILDER.translation(CONFIG_LANG + "feedback").push("feedback");
-		FIRST_HINT = COMMON_BUILDER
-			.translation(CONFIG_LANG + "feedback.firstGaugeHint")
-			.comment("Show a one-time chat hint the first time a player",
-				"places a factory gauge (explains dyeing and path dyeing)")
-			.define("firstGaugeHint", true);
 		FACTORY_CONTROLLER_DYEING = COMMON_BUILDER
 			.translation(CONFIG_LANG + "feedback.factoryControllerDyeing")
 			.comment("Dye ingredient wires inside the Factory Controller GUI:",
