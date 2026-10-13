@@ -35,78 +35,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Client rendering injection: two coloring looks depending on panel state
- * (the design validated during Phase 2).
- *
- * <p><b>Idle state (count == 0, vanilla gray line)</b>: the same underlay
- * applies — the vanilla gray line is kept and only the dye border shows, so
- * the line's own shape and type cues stay readable.</p>
- *
- * <p><b>Active state (in progress / satisfied / promised / waiting for
- * network / redstone-aborted / restock flashing)</b>: a widened dye underlay
- * is rendered below the vanilla line, then the vanilla render proceeds and
- * its core stacks on top, leaving a 1px dye border on each side — the status
- * color (including its flashing animation) is fully preserved while the dye
- * acts as an identification border; no color mixing. Widths are derived from
- * the actual texture geometry: the straight-line texture has a 2px opaque
- * core → 2× scale (4px, 1px peeking per side); the arrow segment combines a
- * 2px shaft with 4px barbs whose vanilla widths differ, so no single scale
- * fits both — instead two same-colored underlays are rendered: the line
- * model at 2× covering the full segment (shaft gets 1px per side, matching
- * the body) plus the arrow model at 1.5× (barbs 6px, 1px per side).</p>
- *
- * <p><b>Corners</b>: a border segment is never shortened — each one is drawn
- * across its whole path step at the texture's original 1:1 sampling, so the
- * border's shade pattern is exactly as dense as the vanilla line's, in the
- * corners as well as along the straight runs. Corners need no patched-in
- * geometry because of where the underlay sits. Vanilla separates
- * perpendicular lines with a 0.125/512 axis offset, so a segment's core
- * always lies either 0.125 above or 0.125 below that of a perpendicular
- * arm; the underlay sinks 0.1875/512 — that offset plus the 0.0625 it takes
- * to hide under its own core — and therefore ends up below *both* cores at a
- * joint. The vanilla line keeps its full L, the border simply passes under
- * it, and the two bands alone fill the quadrant the cores leave open; the
- * quadrant diagonally outside the elbow stays empty. 0.1875/512 blocks is
- * invisible displacement, it only orders occlusion, and it is shallow enough
- * never to hide a crossing link's core either. Earlier revisions cropped the
- * band ends at a joint and closed the gap with small patches instead; those
- * patches sampled the line texture squeezed into a quarter of its length,
- * which read as a far denser pattern than the line itself.</p>
- *
- * <p>Link lines (redstone / display) carry status semantics in their color,
- * are never dyed, and are left entirely to vanilla.</p>
- *
- * <p>Colors come from {@link DyeColor#getTextureDiffuseColor()} (wool
- * palette) rather than {@code getTextColor()} (sign palette): the latter is
- * high-saturation neon that clashes with Create's desaturated industrial
- * look; the wool palette is MC's standard dyed-block range, the same family
- * Create's own dyed blocks use.</p>
- */
 @Mixin(FactoryPanelRenderer.class)
 public abstract class FactoryPanelRendererMixin {
 
-	/**
-	 * Goggles tracing dim target. Mid gray — darker than the vanilla idle
-	 * gray line so a traced-out link reads as "switched off" rather than
-	 * "idle", but light enough to keep a shade of the dye's original hue
-	 * (a dark near-black target made dimmed links look dead and ugly).
-	 * Alpha stays 255 because the cutout render type has no blending;
-	 * dimming is achieved by color alone.
-	 */
 	private static final int TRACE_GRAY = 0xFF606060;
 
 	@Inject(method = "renderPath", at = @At("HEAD"), cancellable = true)
 	private static void createcc$renderDyedPath(FactoryPanelBehaviour behaviour, FactoryPanelConnection connection,
 		float partialTicks, PoseStack ms, MultiBufferSource buffer, int light, int overlay, CallbackInfo ci) {
-		// Hover-lift progress: must be computed and stashed before any early
-		// return (uncolored / link line / empty path) — the vanilla core render
-		// follows immediately, and its Y-argument injection point (the
-		// ModifyArg below) only receives the float argument, relying on this
-		// stash to recover the current connection's lift (renderPath calls are
-		// serialized per connection on the render thread; the stash is safe).
-		// The config gate here also zeroes the ModifyArg's lift (it reads the
-		// same stash), so disabling hoverLift turns the whole feature off in one place
 		float hoverLift = CreateCCConfig.HOVER_LIFT.get()
 			? ConnectionHoverTracker.liftFor(connection.from, behaviour.getPanelPosition())
 			: 0;
@@ -122,26 +58,17 @@ public abstract class FactoryPanelRendererMixin {
 		if (path.isEmpty())
 			return;
 
-		// Link lines (redstone / display) carry status semantics in their color — never dyed, fully vanilla
 		FactoryPanelSupportBehaviour sbe = FactoryPanelBehaviour.linkAt(behaviour.getWorld(), connection);
 		if (sbe != null && (sbe.blockEntity instanceof RedstoneLinkBlockEntity
 			|| sbe.blockEntity instanceof DisplayLinkBlockEntity))
 			return;
 
-		// Goggles tracing: a link outside the traced color group dims to gray.
-		// Both this dye underlay and the vanilla core (redirected below) dim
-		// by the same strength, so a dimmed link never keeps a vivid dye
-		// border around a gray core
 		float traceGray = GogglesTracing.grayStrengthFor(connection.from, behaviour.getPanelPosition());
 
 		float glow = behaviour.bulb.getValue(partialTicks);
-		// Restock flashing (vanilla condition copied): the gray line briefly
-		// flashes white/orange to signal success or failure — a valid feedback
 		boolean flashing = !behaviour.redstonePowered && !behaviour.waitingForNetwork && glow > 0
 			&& !behaviour.satisfied;
 
-		// Vanilla yOffset layering copied verbatim: satisfied 1 / promised 2 /
-		// in progress 3, rising up to 5 while flashing
 		float yOffset = 1;
 		yOffset += behaviour.promisedSatisfied ? 1 : behaviour.satisfied ? 0 : 2;
 		if (!behaviour.redstonePowered && !behaviour.waitingForNetwork && glow > 0 && !behaviour.satisfied
@@ -149,14 +76,6 @@ public abstract class FactoryPanelRendererMixin {
 			float p = (1 - (1 - glow) * (1 - glow));
 			yOffset += (connection.success ? 1 : 2) * p;
 		}
-		// Idle full-line sits on the same layer as the vanilla gray line (the
-		// vanilla render is cancelled, no raise needed). The active-state
-		// underlay sinks by 0.1875: vanilla's 0.125 axis offset between
-		// perpendicular lines, plus the 0.0625 it takes to hide under its own
-		// core. Sinking past the axis offset is what keeps the band off the
-		// other arm's core at a corner — the vanilla line keeps its full L and
-		// the border passes underneath it — so no segment has to be cropped,
-		// and every border segment samples the line texture at 1:1
 		yOffset += -0.1875f;
 
 		int dyeColor = 0xFF000000 | dye.getTextureDiffuseColor();
@@ -172,45 +91,21 @@ public abstract class FactoryPanelRendererMixin {
 
 		for (int i = 0; i < path.size(); i++) {
 			Direction direction = path.get(i);
-			// Vanilla logic: advance the anchor to the segment's end before
-			// rendering it (the model quad extends 0.5 blocks backward from
-			// the anchor, exactly covering this segment)
 			currentX += direction.getStepX() * .5;
 			currentZ += direction.getStepZ() * .5;
 
 			Direction modelDir = direction.getOpposite();
 			boolean alongX = modelDir.getAxis() == Direction.Axis.X;
-			// Vanilla axis offset: east-west segments sit 0.125/512 above
-			// north-south ones — crossings always resolve as "horizontal
-			// above, vertical below", and the sink leans on that same step to
-			// keep a band below both cores at a corner
 			float yLayer = yOffset + (direction.get2DDataValue() % 2) * 0.125f + hoverLift;
 
-			// Border width: the 2px texture core at 2× = 4px, i.e. 1px peeking
-			// out on each side of the vanilla line. Idle draws the dye line
-			// itself, so it keeps the line's original width. Every segment is
-			// drawn across its whole path step — nothing is cropped anywhere —
-			// so the border samples the line texture at its original density
 			float band = 2;
 
 			if (i == 0) {
-				// Arrow segment, dual underlay: shaft (2px) and barbs (4px)
-				// have different vanilla widths, so no single scale fits —
-				// A. line model at 2× covering the whole segment: shaft →4px,
-				//    1px peeking per side (matches the body) and the dye
-				//    border stays continuous along the entire link
-				// B. arrow model at 1.5×: barbs 4px→6px, 1px per side
-				//    (2× would peek 2px)
-				// Two same-color layers stacked: the shaft takes A's 4px, the
-				// barbs take B's 6px — exactly 1px of border everywhere.
-				// This step runs along the panel's facing (it moves nowhere in
-				// the line plane), so it never meets a corner.
 				createcc$underlay(AllPartialModels.FACTORY_PANEL_LINES.get(modelDir), blockState, alongX, 2,
 					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 				createcc$underlay(AllPartialModels.FACTORY_PANEL_ARROWS.get(modelDir), blockState, alongX, 1.5f,
 					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 			} else {
-				// Straight segment at 2× width (2px→4px, 1px peeking per side);
 				PartialModel partial = (i == 0 ? AllPartialModels.FACTORY_PANEL_ARROWS
 					: AllPartialModels.FACTORY_PANEL_LINES).get(modelDir);
 				createcc$underlay(partial, blockState, alongX, band,
@@ -221,23 +116,6 @@ public abstract class FactoryPanelRendererMixin {
 
 	}
 
-	/**
-	 * Renders one dye underlay: builds the same transform chain as vanilla,
-	 * widens the model across the line, colors and outputs it. Nothing is
-	 * scaled along the length: a border segment is always its whole path step,
-	 * which is what keeps its texture pattern as dense as the vanilla line's
-	 * ({@code SuperByteBuffer.scale} moves vertices only, it cannot re-sample
-	 * the texture, so any length scaling would squeeze the pattern instead of
-	 * cropping it cleanly).
-	 *
-	 * @param alongX     whether the model's length axis is X (the width scale
-	 *                   is applied to the other axis)
-	 * @param widthScale width-axis scale (2 = 1px border per side; 1 = the
-	 *                   line's original width)
-	 * @param traceGray  goggles-tracing dim strength (0..1) for this link;
-	 *                   the dye color mixes toward {@link #TRACE_GRAY} so a
-	 *                   dimmed link's border fades with its vanilla core
-	 */
 	private static void createcc$underlay(PartialModel partial, BlockState blockState, boolean alongX,
 		float widthScale, float xRot, float yRot, float anchorX, float anchorZ, float x, float z,
 		float yLayer, boolean scroll, int dyeColor, float traceGray, PoseStack ms, MultiBufferSource buffer,
@@ -254,8 +132,6 @@ public abstract class FactoryPanelRendererMixin {
 			else
 				sprite.scale(widthScale, 1, 1);
 		}
-		// Same scrolling-texture condition as vanilla (washboard animation);
-		// the dye color scrolls along
 		if (scroll)
 			sprite.shiftUV(AllSpriteShifts.FACTORY_PANEL_CONNECTIONS);
 		sprite.color(traceGray > 0 ? Color.mixColors(dyeColor, TRACE_GRAY, traceGray) : dyeColor)
@@ -264,16 +140,6 @@ public abstract class FactoryPanelRendererMixin {
 			.renderInto(ms, buffer.getBuffer(RenderType.cutoutMipped()));
 	}
 
-	/**
-	 * Goggles tracing, vanilla-core half: renderPath colors every segment
-	 * through exactly one {@code SuperByteBuffer.color(int)} call (the line's
-	 * status color); while a trace is active, every link outside the traced
-	 * group mixes toward the trace gray by the current fade strength instead.
-	 * This covers all vanilla-rendered lines — uncolored links, the cores of
-	 * dyed links and status flashes — so the whole network except the traced
-	 * color group dims uniformly. The redirect handler captures renderPath's
-	 * own arguments to identify the link being rendered.
-	 */
 	@Redirect(method = "renderPath", at = @At(value = "INVOKE",
 		target = "Lnet/createmod/catnip/render/SuperByteBuffer;color(I)Lnet/createmod/catnip/render/SuperByteBuffer;"))
 	private static SuperByteBuffer createcc$traceDimVanillaLine(SuperByteBuffer sprite, int color,
@@ -285,23 +151,6 @@ public abstract class FactoryPanelRendererMixin {
 		return sprite.color(Color.mixColors(color, TRACE_GRAY, traceGray));
 	}
 
-	/**
-	 * Hover lift, vanilla-core half: renderPath passes each segment's final
-	 * height as the Y argument of the per-segment translate (the FFF
-	 * overload, the only call site of that overload in the method); this
-	 * appends the lift — it reads the same animation state as the dye border
-	 * drawn by the HEAD injection above, so border and core rise together
-	 * with unchanged relative layering, and the whole line (dyed or not)
-	 * floats above every other line. The lift is measured in layer units
-	 * (each layer = 1/512 blocks): zero visible displacement, it only
-	 * changes the crossing occlusion order.
-	 *
-	 * <p>The handler receives only the float argument being modified (Mixin
-	 * forbids host-method parameters at this injection point); the current
-	 * connection's lift travels via
-	 * {@link ConnectionHoverTracker#stashedLift}, written by the HEAD
-	 * injection at the top of this method.</p>
-	 */
 	@ModifyArg(method = "renderPath", at = @At(value = "INVOKE",
 		target = "Lnet/createmod/catnip/render/SuperByteBuffer;translate(FFF)Ldev/engine_room/flywheel/lib/transform/Translate;",
 		ordinal = 0), index = 1)

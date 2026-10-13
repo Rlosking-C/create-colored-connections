@@ -16,35 +16,10 @@ import org.joml.Vector2i;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Draws the dye underlay for an active GUI wire: Factory Controller's own
- * connection texture tinted with the dye color, covering the wire's path
- * expanded two pixels perpendicular on each side (50% of the 4px core, the
- * same proportion as the world renderer's widened underlay), so the
- * status-colored core rendered afterwards leaves a <em>textured</em> dye
- * border — the GUI counterpart of the world look, which also shows the
- * washboard texture (not a flat color) at the dye edge.
- *
- * <p>The path walk, atlas rects and frame timing replicate FC 1.2.0's
- * {@code VirtualConnectionRenderer.drawPath}. They are copied here because
- * that class keeps its subtexture tables private, and its public sprite API
- * only accepts integer quad coordinates — a sub-pixel-precise border needs
- * float vertices emitted directly, mirroring
- * {@code TiledSpriteRenderer.buildQuad}
- * (quad-local pixel UV, atlas sub-rect on the UV1/UV2 attributes consumed by
- * FC's tiled-sprite shader).</p>
- *
- * <p>Although this is a plain helper (not a mixin), it must stay out of the
- * mixin package declared by {@code createcc-fc.mixins.json}: the mixin
- * framework only allows real mixin classes there. It is referenced only from
- * {@code ConnectionWidgetMixin}, which never loads when Factory Controller
- * is absent.</p>
- */
 public final class DyeUnderlay {
 
 	private DyeUnderlay() {}
 
-	// --- Copied from FC 1.2.0 VirtualConnectionRenderer (pinned dependency) ---
 	private static final int CELL = 16;
 	private static final int FRAME_SIZE = 16;
 	private static final float FRAME_TIME = 2f;
@@ -54,12 +29,6 @@ public final class DyeUnderlay {
 	private static final ResourceLocation TEX_ANIMATED =
 			ResourceLocation.fromNamespaceAndPath("createfactorycontroller", "textures/gui/connection/animated.png");
 
-	/**
-	 * How far the underlay peeks past the 4px core on each side, in canvas px.
-	 * Scaled from the world renderer's look (2px core widened 2×, 1px peeking
-	 * per side → border = 50% of core): the GUI core is 4px, so the border is
-	 * 2px per side — the same border-to-core proportion as a dyed wall link.
-	 */
 	private static final float BORDER = 2f;
 
 	private enum Dir {
@@ -73,7 +42,6 @@ public final class DyeUnderlay {
 		}
 	}
 
-	/** Subtexture rect in the connection atlas: u, v, w, h, anchor ox, anchor oy. */
 	private record Sub(int u, int v, int w, int h, int ox, int oy) {}
 
 	private static final Map<Dir, Sub> LINES = Map.of(
@@ -92,18 +60,9 @@ public final class DyeUnderlay {
 			Dir.LEFT, new Sub(0, 8, 2, 4, 8, 2),
 			Dir.RIGHT, new Sub(6, 12, 2, 4, -6, 2));
 
-	/** Render types are cached per texture inside FC's renderer; fetch once per atlas. */
 	private static RenderType staticType;
 	private static RenderType animatedType;
 
-	/**
-	 * Grabs the render type of the connection-texture batch. The four-argument
-	 * factory is the same one FC's own sprite lookup uses — the one-argument
-	 * overload resolves through the stitched GUI sprite atlas instead, which
-	 * would yield a different (wrong) texture binding. The u/v offsets and the
-	 * dummy tile scaling are never read: only the per-atlas render type is
-	 * borrowed, the quads are emitted by {@link #quad}.
-	 */
 	private static RenderType renderType(boolean animated) {
 		if (animated) {
 			if (animatedType == null)
@@ -117,11 +76,6 @@ public final class DyeUnderlay {
 		return staticType;
 	}
 
-	/**
-	 * Submits the whole wire path in dye tint, two pixels wider than the core
-	 * on each side, into the same batch the wires render in — anything drawn
-	 * afterwards (the vanilla status core) stacks on top.
-	 */
 	public static void draw(GuiGraphics gfx, List<Vector2i> path, int argb, boolean animated) {
 		if (path == null || path.size() < 2)
 			return;
@@ -184,13 +138,6 @@ public final class DyeUnderlay {
 		}
 	}
 
-	/**
-	 * One sprite quad, expanded perpendicular to the wire direction. The UV
-	 * pattern mirrors TiledSpriteRenderer.buildQuad: UV0 spans the tile size
-	 * in quad-local pixels (so the tile stretches over the expanded quad, its
-	 * outer pixels forming the visible border), while UV1/UV2 carry the atlas
-	 * sub-rect and frame offset for FC's tiled-sprite shader.
-	 */
 	private static void quad(VertexConsumer buffer, PoseStack pose, Dir dir,
 			float x1, float y1, float x2, float y2, Sub st, int frame, int argb) {
 		if (dir == Dir.UP || dir == Dir.DOWN) {

@@ -11,29 +11,6 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-/**
- * One preview beam: an axis-aligned cuboid submitted directly in world
- * coordinates, drawn through Catnip's outline pipeline (the same
- * entity-solid layer {@code Outliner.showLine} uses).
- *
- * <p>Why not {@code Outliner.showLine}? Catnip's {@code LineOutline} rotates
- * the vertex pose so the cuboid's local +Z follows the line direction and,
- * with {@code disableLineNormals}, labels every face with the LOCAL up
- * vector. For a horizontal beam that local up survives as world up, so the
- * entity-solid shader's directional lights give it full brightness — but for
- * a VERTICAL beam the pose's 90-degree pitch rotates that normal sideways,
- * and the same lights cut its brightness to roughly three quarters. That is
- * exactly the "vertical beams look darker" artifact. Rendering the cuboid
- * through an UNROTATED pose (only translated by -camera) keeps every face's
- * normal pointing at world up, so horizontal and vertical runs of the
- * preview glow with identical intensity.</p>
- *
- * <p>Because all faces share one normal, one color and one full-bright
- * lightmap, cuboids that meet edge to edge shade to identical pixels — the
- * preview relies on that: its pieces touch but never overlap (see
- * {@code BatchPreviewRenderer}), so there is nothing left to double-blend or
- * z-fight at a joint or a crossing.</p>
- */
 public final class WorldAlignedBeamOutline extends Outline {
 
 	private final AABB box;
@@ -59,13 +36,6 @@ public final class WorldAlignedBeamOutline extends Outline {
 		ms.popPose();
 	}
 
-	/**
-	 * While the outline fades out, Catnip shrinks {@code getLineWidth()}
-	 * (it tracks the fading alpha). Mirror that behaviour by collapsing the
-	 * cuboid's cross-section toward its own long axis — the same thinning
-	 * {@code LineOutline} applies to its beams — instead of lingering at
-	 * full thickness and popping out.
-	 */
 	private static AABB shrinkTowardRunAxis(AABB box, float factor) {
 		if (factor >= 1.0F)
 			return box;
@@ -79,7 +49,6 @@ public final class WorldAlignedBeamOutline extends Outline {
 		return resizeCross(box, factor, false, false, true);
 	}
 
-	/** Shrinks the two cross-section axes by {@code factor}, keeps the run axis. */
 	private static AABB resizeCross(AABB box, float factor, boolean keepX, boolean keepY, boolean keepZ) {
 		double cx = (box.minX + box.maxX) / 2;
 		double cy = (box.minY + box.maxY) / 2;

@@ -12,21 +12,8 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-/**
- * Server → Client: connection color sync packet.
- *
- * <p>Two scenarios:
- * <ul>
- *   <li>Incremental (fullSync = false): when one connection is colored or
- *       cleared, broadcast to players tracking the chunk containing the panel</li>
- *   <li>Full (fullSync = true): on player login or dimension change, clear
- *       the client mirror first and then land the whole table, so stale
- *       entries from the old dimension can't pollute the new one</li>
- * </ul></p>
- */
 public record SyncConnectionColorsPacket(List<Entry> entries, boolean fullSync) implements CustomPacketPayload {
 
-	/** One color record; dyeOrdinal = -1 means clearing that connection's color */
 	public record Entry(ConnectionKey key, int dyeOrdinal) {
 		public static final StreamCodec<ByteBuf, Entry> STREAM_CODEC = StreamCodec.composite(
 			ConnectionKey.STREAM_CODEC, Entry::key,
@@ -49,10 +36,6 @@ public record SyncConnectionColorsPacket(List<Entry> entries, boolean fullSync) 
 		return TYPE;
 	}
 
-	/**
-	 * Client handler: on fullSync replace the mirror wholesale, otherwise
-	 * apply entries incrementally.
-	 */
 	public static void handle(SyncConnectionColorsPacket payload, IPayloadContext context) {
 		if (payload.fullSync())
 			ConnectionColorManager.clientReplaceAll(payload.entries());

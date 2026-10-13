@@ -9,16 +9,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.BlockEvent;
 
-/**
- * One-time discovery hint: the first time a player places a factory gauge,
- * a chat message explains that links can be dyed (and path-dyed).
- *
- * <p>The single biggest enemy of a small QoL mod is players never learning
- * it exists; the hint fires exactly once per player, at the moment they
- * demonstrably engage with the feature's parent system. The "seen" flag
- * lives in the player's persistent data, so it survives relogs (but not
- * death by design — a refresher after respawn is harmless).</p>
- */
 @EventBusSubscriber(modid = ColoredConnections.MODID)
 public class FirstGaugeHint {
 
@@ -26,8 +16,6 @@ public class FirstGaugeHint {
 
 	@SubscribeEvent
 	public static void onBlockPlaced(BlockEvent.EntityPlaceEvent event) {
-		// Server side only — the message is sent through the server so both
-		// the flag and the delivery are authoritative
 		if (event.getLevel().isClientSide())
 			return;
 		if (!(event.getEntity() instanceof ServerPlayer player))
