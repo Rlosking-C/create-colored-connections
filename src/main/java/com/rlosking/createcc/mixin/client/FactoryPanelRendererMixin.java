@@ -39,9 +39,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * Client rendering injection: two coloring looks depending on panel state
  * (the design validated during Phase 2).
  *
- * <p><b>Idle state (count == 0, vanilla gray line)</b>: the vanilla render is
- * cancelled and the whole line is replaced with the dye color — gray carries
- * no information, so here the dye color is the line's only semantics.</p>
+ * <p><b>Idle state (count == 0, vanilla gray line)</b>: the same underlay
+ * applies — the vanilla gray line is kept and only the dye border shows, so
+ * the line's own shape and type cues stay readable.</p>
  *
  * <p><b>Active state (in progress / satisfied / promised / waiting for
  * network / redstone-aborted / restock flashing)</b>: a widened dye underlay
@@ -139,12 +139,6 @@ public abstract class FactoryPanelRendererMixin {
 		// flashes white/orange to signal success or failure — a valid feedback
 		boolean flashing = !behaviour.redstonePowered && !behaviour.waitingForNetwork && glow > 0
 			&& !behaviour.satisfied;
-		// Idle: no demand (count==0), no config warning, not aborted, no
-		// flashing feedback, not waiting for network (while waiting, vanilla
-		// shows an amber line as a valid status cue, so it's not idle) —
-		// the gray line carries no information
-		boolean idle = behaviour.count == 0 && !behaviour.isMissingAddress() && !behaviour.redstonePowered
-			&& !flashing && !behaviour.waitingForNetwork;
 
 		// Vanilla yOffset layering copied verbatim: satisfied 1 / promised 2 /
 		// in progress 3, rising up to 5 while flashing
@@ -163,7 +157,7 @@ public abstract class FactoryPanelRendererMixin {
 		// other arm's core at a corner — the vanilla line keeps its full L and
 		// the border passes underneath it — so no segment has to be cropped,
 		// and every border segment samples the line texture at 1:1
-		yOffset += idle ? 0 : -0.1875f;
+		yOffset += -0.1875f;
 
 		int dyeColor = 0xFF000000 | dye.getTextureDiffuseColor();
 		boolean scroll = !behaviour.isMissingAddress() && !behaviour.waitingForNetwork
@@ -197,9 +191,9 @@ public abstract class FactoryPanelRendererMixin {
 			// itself, so it keeps the line's original width. Every segment is
 			// drawn across its whole path step — nothing is cropped anywhere —
 			// so the border samples the line texture at its original density
-			float band = idle ? 1 : 2;
+			float band = 2;
 
-			if (i == 0 && !idle) {
+			if (i == 0) {
 				// Arrow segment, dual underlay: shaft (2px) and barbs (4px)
 				// have different vanilla widths, so no single scale fits —
 				// A. line model at 2× covering the whole segment: shaft →4px,
@@ -217,7 +211,6 @@ public abstract class FactoryPanelRendererMixin {
 					xRot, yRot, anchorX, anchorZ, currentX, currentZ, yLayer, scroll, dyeColor, traceGray, ms, buffer, light, overlay);
 			} else {
 				// Straight segment at 2× width (2px→4px, 1px peeking per side);
-				// the idle full-line keeps its original width
 				PartialModel partial = (i == 0 ? AllPartialModels.FACTORY_PANEL_ARROWS
 					: AllPartialModels.FACTORY_PANEL_LINES).get(modelDir);
 				createcc$underlay(partial, blockState, alongX, band,
@@ -226,10 +219,6 @@ public abstract class FactoryPanelRendererMixin {
 			}
 		}
 
-		// Idle: the vanilla gray line is replaced by the full dye line;
-		// active states proceed, the vanilla core stacks on the underlay
-		if (idle)
-			ci.cancel();
 	}
 
 	/**
